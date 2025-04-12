@@ -26,6 +26,12 @@ public class GameController {
         return ResponseEntity.ok(games);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<GameDTOs.GameResponse> getGameById(@PathVariable Long id) {
+        GameDTOs.GameResponse game = gameService.getGameById(id);
+        return ResponseEntity.ok(game);
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GameDTOs.GameResponse> createGame(@Valid @RequestBody GameDTOs.GameRequest gameRequest) {
@@ -38,5 +44,21 @@ public class GameController {
                 .toUri();
 
         return ResponseEntity.created(location).body(gameService.getGameById(game.getId()));
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<GameDTOs.GameResponse> updateGame(@PathVariable Long id,
+            @Valid @RequestBody GameDTOs.GameRequest gameRequest) {
+
+        Game game = gameService.updateGame(gameRequest, id);
+        return ResponseEntity.ok(gameService.getGameById(game.getId()));
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteGame(@PathVariable Long id) {
+        gameService.deleteGame(id);
+        return ResponseEntity.noContent().build();
     }
 }
