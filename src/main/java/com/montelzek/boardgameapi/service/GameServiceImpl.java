@@ -22,13 +22,7 @@ public class GameServiceImpl implements GameService{
     public Game createGame(GameDTOs.GameRequest gameRequest) {
 
         Game newGame = new Game();
-        newGame.setTitle(gameRequest.getTitle());
-        newGame.setDescription(gameRequest.getDescription());
-        newGame.setMinPlayers(gameRequest.getMinPlayers());
-        newGame.setMaxPlayers(gameRequest.getMaxPlayers());
-        newGame.setPlayTime(gameRequest.getPlayTime());
-        newGame.setPublisher(gameRequest.getPublisher());
-        newGame.setReleaseYear(gameRequest.getReleaseYear());
+        mapGameRequestToGame(gameRequest, newGame);
 
         return gameRepository.save(newGame);
     }
@@ -63,6 +57,33 @@ public class GameServiceImpl implements GameService{
         return gameRepository.findAll().stream()
                 .map(this::mapToGameResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Game updateGame(GameDTOs.GameRequest gameRequest, Long gameId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
+
+        mapGameRequestToGame(gameRequest, game);
+
+        return gameRepository.save(game);
+    }
+
+    public void deleteGame(Long id) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + id));
+
+        gameRepository.delete(game);
+    }
+
+    private void mapGameRequestToGame(GameDTOs.GameRequest gameRequest, Game game) {
+        game.setTitle(gameRequest.getTitle());
+        game.setDescription(gameRequest.getDescription());
+        game.setMinPlayers(gameRequest.getMinPlayers());
+        game.setMaxPlayers(gameRequest.getMaxPlayers());
+        game.setPlayTime(gameRequest.getPlayTime());
+        game.setPublisher(gameRequest.getPublisher());
+        game.setReleaseYear(gameRequest.getReleaseYear());
     }
 
     private ReviewDTOs.ReviewResponse mapToReviewResponse(Review review) {
