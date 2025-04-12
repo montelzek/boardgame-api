@@ -5,6 +5,7 @@ import com.montelzek.boardgameapi.service.CustomUserDetailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -34,6 +35,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/games").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/games/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/games/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/games", "/games/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
