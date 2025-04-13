@@ -35,10 +35,15 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        // games
                         .requestMatchers(HttpMethod.POST, "/games").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/games/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/games/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/games", "/games/**").authenticated()
+                        // users
+                        .requestMatchers(HttpMethod.GET, "/users/{id}").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/users/{id}").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/users/{id}").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
