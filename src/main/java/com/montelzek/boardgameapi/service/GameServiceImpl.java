@@ -3,8 +3,9 @@ package com.montelzek.boardgameapi.service;
 import com.montelzek.boardgameapi.dto.GameDTOs;
 import com.montelzek.boardgameapi.dto.ReviewDTOs;
 import com.montelzek.boardgameapi.exception.ResourceNotFoundException;
+import com.montelzek.boardgameapi.mapper.GameMapper;
+import com.montelzek.boardgameapi.mapper.ReviewMapper;
 import com.montelzek.boardgameapi.model.Game;
-import com.montelzek.boardgameapi.model.Review;
 import com.montelzek.boardgameapi.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,12 +18,14 @@ import java.util.stream.Collectors;
 public class GameServiceImpl implements GameService{
 
     private final GameRepository gameRepository;
+    private final GameMapper gameMapper;
+    private final ReviewMapper reviewMapper;
 
     @Override
     public Game createGame(GameDTOs.GameRequest gameRequest) {
 
         Game newGame = new Game();
-        mapGameRequestToGame(gameRequest, newGame);
+        gameMapper.mapGameRequestToGame(gameRequest, newGame);
 
         return gameRepository.save(newGame);
     }
@@ -33,10 +36,10 @@ public class GameServiceImpl implements GameService{
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
 
         List<ReviewDTOs.ReviewResponse> reviews = game.getReviews().stream()
-                .map(this::mapToReviewResponse)
+                .map(reviewMapper::mapToReviewResponse)
                 .collect(Collectors.toList());
 
-        GameDTOs.GameResponse gameResponse = mapToGameResponse(game);
+        GameDTOs.GameResponse gameResponse = gameMapper.mapToGameResponse(game);
 
         return GameDTOs.GameResponse.builder()
                 .id(gameResponse.getId())
@@ -55,7 +58,7 @@ public class GameServiceImpl implements GameService{
     @Override
     public List<GameDTOs.GameResponse> listAllGames() {
         return gameRepository.findAll().stream()
-                .map(this::mapToGameResponse)
+                .map(gameMapper::mapToGameResponse)
                 .collect(Collectors.toList());
     }
 
@@ -64,7 +67,7 @@ public class GameServiceImpl implements GameService{
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
 
-        mapGameRequestToGame(gameRequest, game);
+        gameMapper.mapGameRequestToGame(gameRequest, game);
 
         return gameRepository.save(game);
     }
@@ -74,41 +77,5 @@ public class GameServiceImpl implements GameService{
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + id));
 
         gameRepository.delete(game);
-    }
-
-    private void mapGameRequestToGame(GameDTOs.GameRequest gameRequest, Game game) {
-        game.setTitle(gameRequest.getTitle());
-        game.setDescription(gameRequest.getDescription());
-        game.setMinPlayers(gameRequest.getMinPlayers());
-        game.setMaxPlayers(gameRequest.getMaxPlayers());
-        game.setPlayTime(gameRequest.getPlayTime());
-        game.setPublisher(gameRequest.getPublisher());
-        game.setReleaseYear(gameRequest.getReleaseYear());
-    }
-
-    private ReviewDTOs.ReviewResponse mapToReviewResponse(Review review) {
-        return ReviewDTOs.ReviewResponse.builder()
-                .id(review.getId())
-                .gameId(review.getGame().getId())
-                .gameTitle(review.getGame().getTitle())
-                .userId(review.getUser().getId())
-                .email(review.getUser().getEmail())
-                .rating(review.getRating())
-                .comment(review.getComment())
-                .createdAt(review.getCreatedAt())
-                .build();
-    }
-
-    private GameDTOs.GameResponse mapToGameResponse(Game game) {
-        return GameDTOs.GameResponse.builder()
-                .id(game.getId())
-                .title(game.getTitle())
-                .description(game.getDescription())
-                .minPlayers(game.getMinPlayers())
-                .maxPlayers(game.getMaxPlayers())
-                .playTime(game.getPlayTime())
-                .publisher(game.getPublisher())
-                .releaseYear(game.getReleaseYear())
-                .build();
     }
 }
