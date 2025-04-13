@@ -88,7 +88,7 @@ public class UserServiceImpl implements UserService{
         userRepository.deleteById(userId);
     }
 
-    private Long getCurrentUserId() {
+    public Long getCurrentUserId() {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
