@@ -44,6 +44,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/users/{id}").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/users/{id}").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/users/{id}").authenticated()
+                        // collections
+                        .requestMatchers(HttpMethod.GET, "/users/{userId}/collection").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/users/{userId}/collection").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/users/{userId}/collection/{gameId}").authenticated()
+                        // reviews
+                        .requestMatchers(HttpMethod.GET, "/games/{gameId}/reviews").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/games/{gameId}/reviews").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/reviews/{reviewId}").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/reviews/{reviewId}").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
