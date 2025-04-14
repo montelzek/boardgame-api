@@ -63,10 +63,14 @@ public class ReviewServiceImpl implements ReviewService{
     }
 
     @Override
-    public Review updateReview(Long reviewId, ReviewDTOs.ReviewRequest reviewRequest) {
+    public Review updateReview(Long reviewId, Long gameId, ReviewDTOs.ReviewRequest reviewRequest) {
 
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
+
+        if (!review.getGame().getId().equals(gameId)) {
+            throw new ResourceNotFoundException("Review with id " + reviewId + " does not belong to game with id " + gameId);
+        }
 
         if (!userService.getCurrentUserId().equals(review.getUser().getId())) {
             throw new AccessDeniedException("You are not authorized to update this review");
@@ -79,10 +83,14 @@ public class ReviewServiceImpl implements ReviewService{
     }
 
     @Override
-    public void deleteReview(Long reviewId) {
+    public void deleteReview(Long reviewId, Long gameId) {
 
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
+
+        if (!review.getGame().getId().equals(gameId)) {
+            throw new ResourceNotFoundException("Review with id " + reviewId + " does not belong to game with id " + gameId);
+        }
 
         if (!userService.getCurrentUserId().equals(review.getUser().getId()) &&
                 !SecurityContextHolder.getContext().getAuthentication().getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"))) {
