@@ -39,10 +39,9 @@ public class CollectionController {
     }
 
     @DeleteMapping("/{userId}/collection/{gameId}")
-    public ResponseEntity<String> removeGameFromCollection(@PathVariable Long userId, @PathVariable Long gameId) {
+    public ResponseEntity<Void> removeGameFromCollection(@PathVariable Long userId, @PathVariable Long gameId) {
 
         collectionService.removeGameFromCollection(userId, gameId);
-        return new ResponseEntity<>("Game with ID " + gameId
-                + " was successfully removed from the collection of user of id " + userId, HttpStatus.OK);
+        return ResponseEntity.noContent().build();
     }
 }
