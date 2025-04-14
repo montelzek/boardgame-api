@@ -14,19 +14,19 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/users/{userId}/collection")
 @RequiredArgsConstructor
 public class CollectionController {
 
     private final CollectionService collectionService;
 
-    @GetMapping("/{userId}/collection")
+    @GetMapping
     public ResponseEntity<List<GameDTOs.GameResponse>> getUserCollection(@PathVariable Long userId) {
         List<GameDTOs.GameResponse> collection = collectionService.getUserCollection(userId);
         return ResponseEntity.ok(collection);
     }
 
-    @PostMapping("/{userId}/collection")
+    @PostMapping
     public ResponseEntity<?> addGameToCollection(@PathVariable Long userId,
                                                     @Valid @RequestBody CollectionDTO.CollectionRequest collectionRequest) {
         collectionService.addGameToCollection(userId, collectionRequest.getGameId());
@@ -38,7 +38,7 @@ public class CollectionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @DeleteMapping("/{userId}/collection/{gameId}")
+    @DeleteMapping("/{gameId}")
     public ResponseEntity<Void> removeGameFromCollection(@PathVariable Long userId, @PathVariable Long gameId) {
 
         collectionService.removeGameFromCollection(userId, gameId);
