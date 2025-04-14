@@ -6,49 +6,21 @@ import com.montelzek.boardgameapi.model.Review;
 import com.montelzek.boardgameapi.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
-import java.net.URI;
-import java.util.List;
 
 @RestController
-@RequestMapping("/games/{gameId}/reviews")
+@RequestMapping("/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
 
     private final ReviewService reviewService;
     private final ReviewMapper reviewMapper;
 
-    @GetMapping
-    public ResponseEntity<List<ReviewDTOs.ReviewResponse>> getReviewsByGameId(@PathVariable Long gameId) {
-
-        List<ReviewDTOs.ReviewResponse> reviews = reviewService.getReviewsByGameId(gameId);
-        return ResponseEntity.ok(reviews);
-    }
-
-    @PostMapping
-    public ResponseEntity<ReviewDTOs.ReviewResponse> createReview(@PathVariable Long gameId,
-                                                                  @Valid @RequestBody ReviewDTOs.ReviewRequest reviewRequest) {
-        Review review = reviewService.createReview(gameId, reviewRequest);
-
-        ReviewDTOs.ReviewResponse reviewResponse = reviewMapper.mapToReviewResponse(review);
-
-        URI location = ServletUriComponentsBuilder
-                .fromCurrentContextPath()
-                .path("/reviews/{id}")
-                .buildAndExpand(review.getId())
-                .toUri();
-        return ResponseEntity.created(location).body(reviewResponse);
-    }
-
     @PutMapping("/{reviewId}")
     public ResponseEntity<ReviewDTOs.ReviewResponse> updateReview(@PathVariable Long reviewId,
-                                                                  @PathVariable Long gameId,
                                                                   @Valid @RequestBody ReviewDTOs.ReviewRequest reviewRequest) {
-        Review review = reviewService.updateReview(reviewId, gameId, reviewRequest);
+        Review review = reviewService.updateReview(reviewId, reviewRequest);
 
         ReviewDTOs.ReviewResponse reviewResponse = reviewMapper.mapToReviewResponse(review);
 
@@ -56,8 +28,8 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{reviewId}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId, @PathVariable Long gameId) {
-        reviewService.deleteReview(reviewId, gameId);
+    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
+        reviewService.deleteReview(reviewId);
         return ResponseEntity.noContent().build();
     }
 }

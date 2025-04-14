@@ -11,7 +11,7 @@ public interface ReviewService {
 
     Review createReview(Long gameId, ReviewDTOs.ReviewRequest reviewRequest);
 
-    Review updateReview(Long reviewId, Long gameId, ReviewDTOs.ReviewRequest reviewRequest);
+    Review updateReview(Long reviewId, ReviewDTOs.ReviewRequest reviewRequest);
 
-    void deleteReview(Long reviewId, Long gameId);
+    void deleteReview(Long reviewId);
 }

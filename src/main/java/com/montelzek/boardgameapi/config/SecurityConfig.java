@@ -34,25 +34,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        // games
-                        .requestMatchers(HttpMethod.POST, "/games").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/games/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/games/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/games", "/games/**").authenticated()
-                        // users
-                        .requestMatchers(HttpMethod.GET, "/users/{id}").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/users/{id}").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/users/{id}").authenticated()
-                        // collections
-                        .requestMatchers(HttpMethod.GET, "/users/{userId}/collection").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/users/{userId}/collection").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/users/{userId}/collection/{gameId}").authenticated()
-                        // reviews
-                        .requestMatchers(HttpMethod.GET, "/games/{gameId}/reviews").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/games/{gameId}/reviews").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/reviews/{reviewId}").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/reviews/{reviewId}").authenticated()
+                        .requestMatchers("/auth/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui/**", "/v3/swagger-config").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
