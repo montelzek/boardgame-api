@@ -15,21 +15,21 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping
+@RequestMapping("/games/{gameId}/reviews")
 @RequiredArgsConstructor
 public class ReviewController {
 
     private final ReviewService reviewService;
     private final ReviewMapper reviewMapper;
 
-    @GetMapping("/games/{gameId}/reviews")
+    @GetMapping
     public ResponseEntity<List<ReviewDTOs.ReviewResponse>> getReviewsByGameId(@PathVariable Long gameId) {
 
         List<ReviewDTOs.ReviewResponse> reviews = reviewService.getReviewsByGameId(gameId);
         return ResponseEntity.ok(reviews);
     }
 
-    @PostMapping("/games/{gameId}/reviews")
+    @PostMapping
     public ResponseEntity<ReviewDTOs.ReviewResponse> createReview(@PathVariable Long gameId,
                                                                   @Valid @RequestBody ReviewDTOs.ReviewRequest reviewRequest) {
         Review review = reviewService.createReview(gameId, reviewRequest);
@@ -44,19 +44,20 @@ public class ReviewController {
         return ResponseEntity.created(location).body(reviewResponse);
     }
 
-    @PutMapping("/reviews/{reviewId}")
+    @PutMapping("/{reviewId}")
     public ResponseEntity<ReviewDTOs.ReviewResponse> updateReview(@PathVariable Long reviewId,
+                                                                  @PathVariable Long gameId,
                                                                   @Valid @RequestBody ReviewDTOs.ReviewRequest reviewRequest) {
-        Review review = reviewService.updateReview(reviewId, reviewRequest);
+        Review review = reviewService.updateReview(reviewId, gameId, reviewRequest);
 
         ReviewDTOs.ReviewResponse reviewResponse = reviewMapper.mapToReviewResponse(review);
 
         return ResponseEntity.ok(reviewResponse);
     }
 
-    @DeleteMapping("/reviews/{reviewId}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
-        reviewService.deleteReview(reviewId);
+    @DeleteMapping("/{reviewId}")
+    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId, @PathVariable Long gameId) {
+        reviewService.deleteReview(reviewId, gameId);
         return ResponseEntity.noContent().build();
     }
 }
