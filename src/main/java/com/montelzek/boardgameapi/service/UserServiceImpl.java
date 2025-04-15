@@ -9,6 +9,7 @@ import com.montelzek.boardgameapi.mapper.ReviewMapper;
 import com.montelzek.boardgameapi.model.User;
 import com.montelzek.boardgameapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,6 +18,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -45,7 +47,7 @@ public class UserServiceImpl implements UserService{
 
         return UserDTOs.UserResponse.builder()
                 .id(user.getId())
-                .fullName(user.getEmail())
+                .fullName(user.getFullName())
                 .email(user.getEmail())
                 .role(user.getRole().name())
                 .collection(collection)
@@ -61,6 +63,11 @@ public class UserServiceImpl implements UserService{
 
         if (!getCurrentUserId().equals(user.getId())) {
             throw new AccessDeniedException("You are not authorized to update this user");
+        }
+
+        if (userRepository.existsByEmail(userUpdateRequest.getEmail()) &&
+                !userUpdateRequest.getEmail().equals(user.getEmail())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already taken");
         }
 
         user.setFullName(userUpdateRequest.getFullName());
