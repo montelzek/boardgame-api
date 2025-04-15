@@ -1,8 +1,6 @@
 package com.montelzek.boardgameapi.controller;
 
 import com.montelzek.boardgameapi.dto.ReviewDTOs;
-import com.montelzek.boardgameapi.mapper.ReviewMapper;
-import com.montelzek.boardgameapi.model.Review;
 import com.montelzek.boardgameapi.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,14 +13,12 @@ import org.springframework.web.bind.annotation.*;
 public class ReviewController {
 
     private final ReviewService reviewService;
-    private final ReviewMapper reviewMapper;
 
     @PutMapping("/{reviewId}")
     public ResponseEntity<ReviewDTOs.ReviewResponse> updateReview(@PathVariable Long reviewId,
                                                                   @Valid @RequestBody ReviewDTOs.ReviewRequest reviewRequest) {
-        Review review = reviewService.updateReview(reviewId, reviewRequest);
 
-        ReviewDTOs.ReviewResponse reviewResponse = reviewMapper.mapToReviewResponse(review);
+        ReviewDTOs.ReviewResponse reviewResponse = reviewService.updateReview(reviewId, reviewRequest);
 
         return ResponseEntity.ok(reviewResponse);
     }

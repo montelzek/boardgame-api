@@ -39,7 +39,7 @@ public class ReviewServiceImpl implements ReviewService{
     }
 
     @Override
-    public Review createReview(Long gameId, ReviewDTOs.ReviewRequest reviewRequest) {
+    public ReviewDTOs.ReviewResponse createReview(Long gameId, ReviewDTOs.ReviewRequest reviewRequest) {
 
         User user = userRepository.findById(userService.getCurrentUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -59,11 +59,13 @@ public class ReviewServiceImpl implements ReviewService{
         review.setComment(reviewRequest.getComment());
         review.setCreatedAt(LocalDateTime.now());
 
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+
+        return reviewMapper.mapToReviewResponse(savedReview);
     }
 
     @Override
-    public Review updateReview(Long reviewId, ReviewDTOs.ReviewRequest reviewRequest) {
+    public ReviewDTOs.ReviewResponse updateReview(Long reviewId, ReviewDTOs.ReviewRequest reviewRequest) {
 
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
@@ -75,7 +77,9 @@ public class ReviewServiceImpl implements ReviewService{
         review.setRating(reviewRequest.getRating());
         review.setComment(reviewRequest.getComment());
 
-        return reviewRepository.save(review);
+        Review updatedReview = reviewRepository.save(review);
+
+        return reviewMapper.mapToReviewResponse(updatedReview);
     }
 
     @Override

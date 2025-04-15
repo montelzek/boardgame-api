@@ -9,9 +9,9 @@ public interface ReviewService {
 
     List<ReviewDTOs.ReviewResponse> getReviewsByGameId(Long gameId);
 
-    Review createReview(Long gameId, ReviewDTOs.ReviewRequest reviewRequest);
+    ReviewDTOs.ReviewResponse createReview(Long gameId, ReviewDTOs.ReviewRequest reviewRequest);
 
-    Review updateReview(Long reviewId, ReviewDTOs.ReviewRequest reviewRequest);
+    ReviewDTOs.ReviewResponse updateReview(Long reviewId, ReviewDTOs.ReviewRequest reviewRequest);
 
     void deleteReview(Long reviewId);
 }

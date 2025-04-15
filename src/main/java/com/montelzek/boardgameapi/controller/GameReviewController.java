@@ -1,8 +1,6 @@
 package com.montelzek.boardgameapi.controller;
 
 import com.montelzek.boardgameapi.dto.ReviewDTOs;
-import com.montelzek.boardgameapi.mapper.ReviewMapper;
-import com.montelzek.boardgameapi.model.Review;
 import com.montelzek.boardgameapi.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +17,6 @@ import java.util.List;
 public class GameReviewController {
 
     private final ReviewService reviewService;
-    private final ReviewMapper reviewMapper;
 
     @GetMapping
     public ResponseEntity<List<ReviewDTOs.ReviewResponse>> getReviewsByGameId(@PathVariable Long gameId) {
@@ -31,14 +28,13 @@ public class GameReviewController {
     @PostMapping
     public ResponseEntity<ReviewDTOs.ReviewResponse> createReview(@PathVariable Long gameId,
                                                                   @Valid @RequestBody ReviewDTOs.ReviewRequest reviewRequest) {
-        Review review = reviewService.createReview(gameId, reviewRequest);
 
-        ReviewDTOs.ReviewResponse reviewResponse = reviewMapper.mapToReviewResponse(review);
+        ReviewDTOs.ReviewResponse reviewResponse = reviewService.createReview(gameId, reviewRequest);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentContextPath()
                 .path("/reviews/{id}")
-                .buildAndExpand(review.getId())
+                .buildAndExpand(reviewResponse.getId())
                 .toUri();
         return ResponseEntity.created(location).body(reviewResponse);
     }
