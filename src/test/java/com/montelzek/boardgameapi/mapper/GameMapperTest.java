@@ -10,16 +10,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class GameMapperTest {
 
     private GameMapper mapper;
+    private Game game;
 
     @BeforeEach
     void setUp() {
         mapper = new GameMapper();
-    }
 
-    @Test
-    void shouldMapGameToGameResponse() {
-        // Arrange
-        Game game = Game.builder()
+        game = Game.builder()
                 .id(1L)
                 .title("Test title")
                 .description("Description")
@@ -29,6 +26,10 @@ class GameMapperTest {
                 .publisher("Publisher")
                 .releaseYear(2015)
                 .build();
+    }
+
+    @Test
+    void shouldMapGameToGameResponse() {
         // Act
         GameDTOs.GameResponse gameResponse = mapper.mapToGameResponse(game);
         //Assert
@@ -44,17 +45,6 @@ class GameMapperTest {
 
     @Test
     void shouldMapGameRequestToGame() {
-        //Arrange
-        Game game = Game.builder()
-                .id(1L)
-                .title("Test title")
-                .description("Description")
-                .minPlayers(2)
-                .maxPlayers(8)
-                .playTime(90)
-                .publisher("Publisher")
-                .releaseYear(2015)
-                .build();
         GameDTOs.GameRequest gameRequest = GameDTOs.GameRequest.builder()
                 .title("Test")
                 .description("Fun game")
