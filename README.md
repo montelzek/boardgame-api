@@ -8,15 +8,16 @@
 4.  [Prerequisites](#prerequisites)
 5.  [Installation and Configuration](#installation-and-configuration)
 6.  [Running the Application](#running-the-application)
-7.  [API Documentation (Endpoints)](#api-documentation-endpoints)
+7.  [Running with Docker](#running-with-docker)
+8.  [API Documentation (Endpoints)](#api-documentation-endpoints)
     *   [Authentication](#authentication)
     *   [Games (Board Games)](#games-board-games)
     *   [Users](#users)
     *   [Collections](#collections)
     *   [Reviews](#reviews)
-8.  [OpenAPI (Swagger) Documentation](#openapi-swagger-documentation)
-9. [Database Structure](#database-structure)
-10. [Error Handling](#error-handling)
+9.  [OpenAPI (Swagger) Documentation](#openapi-swagger-documentation)
+10. [Database Structure](#database-structure)
+11. [Error Handling](#error-handling)
 
 ---
 
@@ -72,7 +73,7 @@
 1.  **Clone the repository:**
     ```bash
     git clone git@github.com:montelzek/boardgame-api.git
-    cd boardgameapi
+    cd boardgame-api
     ```
 
 2.  **Configure the MySQL database:**
@@ -117,6 +118,36 @@ You can run the application in several ways:
       ```
 
 The application will start by default on port `8080`. You can access the API at `http://localhost:8080`.
+
+---
+
+## Running with Docker
+
+### Steps
+
+1.  **Clone the repository**:
+    ```bash
+    git clone git@github.com:montelzek/boardgame-api.git
+    cd boardgame-api
+    ```
+
+2.  **Build and run the services:**
+    ```bash
+    docker compose up --build -d
+    ```
+
+3.  **Access the Application:**
+    *   The API will be available at: `http://localhost:8080`
+
+4.  **Stopping the Application:**
+    To stop and remove the containers, network, and volumes created by Docker Compose, run the following command in the project's root directory:
+    ```bash
+    docker compose down
+    ```
+    If you want to remove the database data volume as well, add the `-v` flag:
+    ```bash
+    docker-compose down -v
+    ```
 
 ---
 
