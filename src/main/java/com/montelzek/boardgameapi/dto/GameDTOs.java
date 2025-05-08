@@ -11,6 +11,7 @@ import java.util.List;
 public class GameDTOs {
 
     @Data
+    @Builder
     public static class GameRequest {
         @NotBlank(message = "Title is required")
         private String title;
