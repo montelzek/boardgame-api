@@ -3,6 +3,7 @@ package com.montelzek.boardgameapi.service;
 import com.montelzek.boardgameapi.dto.GameDTOs;
 import com.montelzek.boardgameapi.dto.ReviewDTOs;
 import com.montelzek.boardgameapi.dto.UserDTOs;
+import com.montelzek.boardgameapi.exception.ResourceNotFoundException;
 import com.montelzek.boardgameapi.mapper.GameMapper;
 import com.montelzek.boardgameapi.mapper.ReviewMapper;
 import com.montelzek.boardgameapi.model.Game;
@@ -18,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 
@@ -110,5 +112,39 @@ public class UserServiceImplTest {
         verify(userRepository).findById(1L);
         verify(gameMapper).mapToGameResponse(game);
         verify(reviewMapper).mapToReviewResponse(review);
+    }
+
+    @Test
+    void getUserByIdTest_whenUserExistsWithEmptyCollections_shouldReturnUserResponseWithEmptyLists() {
+        // Arrange
+        user.setGames(Collections.emptySet());
+        user.setReviews(Collections.emptySet());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        // Act
+        UserDTOs.UserResponse actualResponse = userService.getUserById(1L);
+
+        // Assert
+        assertNotNull(actualResponse);
+        assertEquals(user.getId(), actualResponse.getId());
+        assertTrue(actualResponse.getCollection().isEmpty());
+        assertTrue(actualResponse.getReviews().isEmpty());
+
+        verify(userRepository).findById(1L);
+    }
+
+    @Test
+    void getUserByIdTest_whenUserNotFound_shouldThrowResourceNotFoundException() {
+        // Arrange
+        Long userId = 2L;
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            userService.getUserById(userId);
+        });
+
+        assertEquals("User not found with id: " + userId, exception.getMessage());
+        verify(userRepository).findById(userId);
     }
 }
