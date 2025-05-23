@@ -11,6 +11,7 @@ import java.util.List;
 public class UserDTOs {
 
     @Data
+    @Builder
     public static class UserUpdateRequest {
         @NotBlank(message = "Full name is required")
         private String fullName;
