@@ -17,10 +17,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -55,6 +58,7 @@ public class UserServiceImplTest {
     private UserServiceImpl userService;
 
     private User user;
+    private User anotherUser;
     private Game game;
     private Review review;
     private GameDTOs.GameResponse gameResponse;
@@ -68,6 +72,16 @@ public class UserServiceImplTest {
                 .fullName("Test User")
                 .email("test@example.com")
                 .password("password")
+                .role(Role.USER)
+                .games(new HashSet<>())
+                .reviews(new HashSet<>())
+                .build();
+
+        anotherUser = User.builder()
+                .id(2L)
+                .fullName("Test User 2")
+                .email("test2@example.com")
+                .password("password2")
                 .role(Role.USER)
                 .games(new HashSet<>())
                 .reviews(new HashSet<>())
@@ -213,5 +227,63 @@ public class UserServiceImplTest {
         assertEquals("password", updatedUser.getPassword());
         verify(passwordEncoder, never()).encode(anyString());
         verify(userRepository).save(user);
+    }
+
+    @Test
+    void updateUserTest_whenUserNotFound_shouldThrowResourceNotFoundException() {
+        // Arrange
+        Long nonExistentUserId = -1L;
+        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            userService.updateUser(userUpdateRequest, nonExistentUserId);
+        });
+        assertEquals("User not found with id: " + nonExistentUserId, exception.getMessage());
+        verify(userRepository).findById(nonExistentUserId);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void updateUserTest_whenUserUpdateSomeoneProfile_shouldAccessDeniedException() {
+        // Arrange
+        Long updateUserId = anotherUser.getId();
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(userRepository.findById(updateUserId)).thenReturn(Optional.of(anotherUser));
+
+
+        // Act & Assert
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
+            userService.updateUser(userUpdateRequest, updateUserId);
+        });
+        assertEquals("You are not authorized to update this user", exception.getMessage());
+        verify(userRepository).findById(updateUserId);
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void updateUserTest_whenEmailAlreadyTaken_shouldThrowResponseStatusException() {
+        // Arrange
+        Long userIdToUpdate = user.getId();
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail(userUpdateRequest.getEmail())).thenReturn(true);
+
+        // Act & Assert
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+            userService.updateUser(userUpdateRequest, userIdToUpdate);
+        });
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        assertEquals("Email already taken", exception.getReason());
+        verify(userRepository).findById(userIdToUpdate);
+        verify(userRepository).existsByEmail(userUpdateRequest.getEmail());
+        verify(userRepository, never()).save(any());
     }
 }
