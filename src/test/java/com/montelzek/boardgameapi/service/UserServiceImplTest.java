@@ -17,6 +17,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Collections;
@@ -25,8 +28,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceImplTest {
@@ -43,6 +45,12 @@ public class UserServiceImplTest {
     @Mock
     private ReviewMapper reviewMapper;
 
+    @Mock
+    private Authentication authentication;
+
+    @Mock
+    private SecurityContext securityContext;
+
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -51,6 +59,7 @@ public class UserServiceImplTest {
     private Review review;
     private GameDTOs.GameResponse gameResponse;
     private ReviewDTOs.ReviewResponse reviewResponse;
+    private UserDTOs.UserUpdateRequest userUpdateRequest;
 
     @BeforeEach
     void setUp() {
@@ -83,6 +92,12 @@ public class UserServiceImplTest {
         reviewResponse = ReviewDTOs.ReviewResponse.builder()
                 .id(20L)
                 .comment("Test Review")
+                .build();
+
+        userUpdateRequest = UserDTOs.UserUpdateRequest.builder()
+                .fullName("Updated Name")
+                .email("update@email.com")
+                .password("update123")
                 .build();
     }
 
@@ -146,5 +161,57 @@ public class UserServiceImplTest {
 
         assertEquals("User not found with id: " + userId, exception.getMessage());
         verify(userRepository).findById(userId);
+    }
+
+    @Test
+    void updateUserTest_whenUserUpdateOwnProfile_shouldUpdateAndReturnUser() {
+        // Arrange
+        Long userIdToUpdate = user.getId();
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail(userUpdateRequest.getEmail())).thenReturn(false);
+        when(passwordEncoder.encode(userUpdateRequest.getPassword())).thenReturn("encodedNewPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        User updatedUser = userService.updateUser(userUpdateRequest, userIdToUpdate);
+
+        // Assert
+        assertNotNull(updatedUser);
+        assertEquals(userUpdateRequest.getFullName(), updatedUser.getFullName());
+        assertEquals(userUpdateRequest.getEmail(), updatedUser.getEmail());
+        assertEquals("encodedNewPassword", updatedUser.getPassword());
+        verify(userRepository).findById(userIdToUpdate);
+        verify(userRepository).existsByEmail(userUpdateRequest.getEmail());
+        verify(passwordEncoder).encode(userUpdateRequest.getPassword());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void updateUserTest_whenUserUpdatesOwnProfile_withoutPasswordChange_shouldUpdateAndReturnUser() {
+        // Arrange
+        Long userIdToUpdate = user.getId();
+        userUpdateRequest.setPassword(null);  // No password change
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail(userUpdateRequest.getEmail())).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        // Act
+        User updatedUser = userService.updateUser(userUpdateRequest, userIdToUpdate);
+
+        // Assert
+        assertNotNull(updatedUser);
+        assertEquals(userUpdateRequest.getFullName(), updatedUser.getFullName());
+        assertEquals(userUpdateRequest.getEmail(), updatedUser.getEmail());
+        assertEquals("password", updatedUser.getPassword());
+        verify(passwordEncoder, never()).encode(anyString());
+        verify(userRepository).save(user);
     }
 }
