@@ -20,11 +20,14 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
@@ -169,9 +172,7 @@ public class UserServiceImplTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            userService.getUserById(userId);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> userService.getUserById(userId));
 
         assertEquals("User not found with id: " + userId, exception.getMessage());
         verify(userRepository).findById(userId);
@@ -236,9 +237,8 @@ public class UserServiceImplTest {
         when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            userService.updateUser(userUpdateRequest, nonExistentUserId);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                userService.updateUser(userUpdateRequest, nonExistentUserId));
         assertEquals("User not found with id: " + nonExistentUserId, exception.getMessage());
         verify(userRepository).findById(nonExistentUserId);
         verify(userRepository, never()).save(any());
@@ -257,9 +257,8 @@ public class UserServiceImplTest {
 
 
         // Act & Assert
-        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () -> {
-            userService.updateUser(userUpdateRequest, updateUserId);
-        });
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () ->
+                userService.updateUser(userUpdateRequest, updateUserId));
         assertEquals("You are not authorized to update this user", exception.getMessage());
         verify(userRepository).findById(updateUserId);
         verify(userRepository, never()).save(any());
@@ -277,13 +276,54 @@ public class UserServiceImplTest {
         when(userRepository.existsByEmail(userUpdateRequest.getEmail())).thenReturn(true);
 
         // Act & Assert
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
-            userService.updateUser(userUpdateRequest, userIdToUpdate);
-        });
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () ->
+                userService.updateUser(userUpdateRequest, userIdToUpdate));
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
         assertEquals("Email already taken", exception.getReason());
         verify(userRepository).findById(userIdToUpdate);
         verify(userRepository).existsByEmail(userUpdateRequest.getEmail());
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void deleteUser_whenUserDeletesOwnProfile_shouldDeleteUser() {
+        // Arrange
+        Long userIdToDelete = user.getId();
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(userRepository.findById(userIdToDelete)).thenReturn(Optional.of(user));
+        doNothing().when(userRepository).deleteById(userIdToDelete);
+
+        // Act
+        userService.deleteUser(userIdToDelete);
+
+        // Assert
+        verify(userRepository).findById(userIdToDelete);
+        verify(userRepository).deleteById(userIdToDelete);
+    }
+
+    @Test
+    void deleteUser_whenAdminDeletesUserProfile_shouldDeleteUser() {
+        // Arrange
+        Long userIdToDelete = anotherUser.getId();
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        doReturn(authorities).when(authentication).getAuthorities();
+        when(userRepository.findById(userIdToDelete)).thenReturn(Optional.of(anotherUser));
+        doNothing().when(userRepository).deleteById(userIdToDelete);
+
+        // Act
+        userService.deleteUser(userIdToDelete);
+
+        // Assert
+        verify(userRepository).findById(userIdToDelete);
+        verify(userRepository).deleteById(userIdToDelete);
     }
 }
