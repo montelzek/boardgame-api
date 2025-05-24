@@ -24,6 +24,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -359,5 +360,38 @@ public class UserServiceImplTest {
         assertEquals("You are not authorized to delete this user", exception.getMessage());
         verify(userRepository).findById(userIdToDelete);
         verify(userRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void getCurrentUserIdTest_whenUserAuthenticatedAndExists_shouldReturnUserId() {
+        // Arrange
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn("test@example.com");
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(user));
+
+        // Act
+        Long currentUserId = userService.getCurrentUserId();
+
+        // Assert
+        assertEquals(user.getId(), currentUserId);
+        verify(authentication).getName();
+        verify(userRepository).findByEmail("test@example.com");
+    }
+
+    @Test
+    void getCurrentUserId_whenUserAuthenticatedButNotFound_shouldThrowUsernameNotFoundException() {
+        String email = "unknown@example.com";
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(email);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
+
+        UsernameNotFoundException exception = assertThrows(UsernameNotFoundException.class, () ->
+                userService.getCurrentUserId());
+
+        assertEquals("User not found with email: " + email, exception.getMessage());
+        verify(authentication).getName();
+        verify(userRepository).findByEmail(email);
     }
 }
