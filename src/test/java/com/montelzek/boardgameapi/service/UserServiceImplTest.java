@@ -119,6 +119,13 @@ public class UserServiceImplTest {
                 .build();
     }
 
+    private void mockAuthenticatedUser(User user) {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+    }
+
     @Test
     void getUserByIdTest_whenUserExists_shouldReturnUserResponse() {
         // Arrange
@@ -183,10 +190,7 @@ public class UserServiceImplTest {
     void updateUserTest_whenUserUpdateOwnProfile_shouldUpdateAndReturnUser() {
         // Arrange
         Long userIdToUpdate = user.getId();
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn(user.getEmail());
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        mockAuthenticatedUser(user);
         when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(user));
         when(userRepository.existsByEmail(userUpdateRequest.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(userUpdateRequest.getPassword())).thenReturn("encodedNewPassword");
@@ -210,11 +214,8 @@ public class UserServiceImplTest {
     void updateUserTest_whenUserUpdatesOwnProfile_withoutPasswordChange_shouldUpdateAndReturnUser() {
         // Arrange
         Long userIdToUpdate = user.getId();
-        userUpdateRequest.setPassword(null);  // No password change
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn(user.getEmail());
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        userUpdateRequest.setPassword(null);
+        mockAuthenticatedUser(user);
         when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(user));
         when(userRepository.existsByEmail(userUpdateRequest.getEmail())).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -250,10 +251,7 @@ public class UserServiceImplTest {
         // Arrange
         Long updateUserId = anotherUser.getId();
 
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn(user.getEmail());
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        mockAuthenticatedUser(user);
         when(userRepository.findById(updateUserId)).thenReturn(Optional.of(anotherUser));
 
 
@@ -269,10 +267,7 @@ public class UserServiceImplTest {
     void updateUserTest_whenEmailAlreadyTaken_shouldThrowResponseStatusException() {
         // Arrange
         Long userIdToUpdate = user.getId();
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn(user.getEmail());
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        mockAuthenticatedUser(user);
         when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(user));
         when(userRepository.existsByEmail(userUpdateRequest.getEmail())).thenReturn(true);
 
@@ -291,10 +286,7 @@ public class UserServiceImplTest {
         // Arrange
         Long userIdToDelete = user.getId();
 
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn(user.getEmail());
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        mockAuthenticatedUser(user);
         when(userRepository.findById(userIdToDelete)).thenReturn(Optional.of(user));
         doNothing().when(userRepository).deleteById(userIdToDelete);
 
@@ -311,10 +303,7 @@ public class UserServiceImplTest {
         // Arrange
         Long userIdToDelete = anotherUser.getId();
 
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn(user.getEmail());
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        mockAuthenticatedUser(user);
         Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
         doReturn(authorities).when(authentication).getAuthorities();
         when(userRepository.findById(userIdToDelete)).thenReturn(Optional.of(anotherUser));
@@ -347,10 +336,7 @@ public class UserServiceImplTest {
         // Arrange
         Long userIdToDelete = anotherUser.getId();
 
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        SecurityContextHolder.setContext(securityContext);
-        when(authentication.getName()).thenReturn(user.getEmail());
-        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        mockAuthenticatedUser(user);
         when(userRepository.findById(userIdToDelete)).thenReturn(Optional.of(anotherUser));
 
 
