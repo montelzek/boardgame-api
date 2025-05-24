@@ -326,4 +326,38 @@ public class UserServiceImplTest {
         verify(userRepository).findById(userIdToDelete);
         verify(userRepository).deleteById(userIdToDelete);
     }
+
+    @Test
+    void deleteUserTest_whenUserNotFound_shouldThrowResourceNotFoundException() {
+        // Arrange
+        Long nonExistentUserId = -1L;
+        when(userRepository.findById(nonExistentUserId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                userService.deleteUser(nonExistentUserId));
+        assertEquals("User not found with id: " + nonExistentUserId, exception.getMessage());
+        verify(userRepository).findById(nonExistentUserId);
+        verify(userRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteUserTest_whenUserDeleteSomeoneProfile_shouldThrowAccessDeniedException() {
+        // Arrange
+        Long userIdToDelete = anotherUser.getId();
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(user.getEmail());
+        when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(userRepository.findById(userIdToDelete)).thenReturn(Optional.of(anotherUser));
+
+
+        // Act & Assert
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () ->
+                userService.deleteUser(userIdToDelete));
+        assertEquals("You are not authorized to delete this user", exception.getMessage());
+        verify(userRepository).findById(userIdToDelete);
+        verify(userRepository, never()).deleteById(any());
+    }
 }
