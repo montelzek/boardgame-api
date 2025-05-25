@@ -31,7 +31,11 @@ public class ReviewServiceImpl implements ReviewService{
 
     @Override
     public List<ReviewDTOs.ReviewResponse> getReviewsByGameId(Long gameId) {
-        List<Review> reviews = reviewRepository.findByGameId(gameId);
+
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
+
+        List<Review> reviews = reviewRepository.findByGame(game);
 
         return reviews.stream()
                 .map(reviewMapper::mapToReviewResponse)
