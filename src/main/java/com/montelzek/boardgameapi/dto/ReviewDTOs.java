@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class ReviewDTOs {
 
     @Data
+    @Builder
     public static class ReviewRequest {
 
         @NotNull(message = "Rating is required")
