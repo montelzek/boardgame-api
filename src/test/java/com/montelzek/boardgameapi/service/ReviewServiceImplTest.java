@@ -13,6 +13,7 @@ import com.montelzek.boardgameapi.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -25,8 +26,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ReviewServiceImplTest {
@@ -53,6 +53,7 @@ public class ReviewServiceImplTest {
     private Game game;
     private User user;
     private ReviewDTOs.ReviewResponse reviewResponse;
+    private ReviewDTOs.ReviewRequest reviewRequest;
 
     @BeforeEach
     void setUp() {
@@ -95,6 +96,11 @@ public class ReviewServiceImplTest {
                 .rating(7)
                 .comment("Test Comment")
                 .createdAt(review1.getCreatedAt())
+                .build();
+
+        reviewRequest = ReviewDTOs.ReviewRequest.builder()
+                .rating(9)
+                .comment("Excellent game!")
                 .build();
     }
 
@@ -157,5 +163,74 @@ public class ReviewServiceImplTest {
         assertEquals("Game not found with id: " + nonExistentGameId, exception.getMessage());
 
         verify(gameRepository).findById(nonExistentGameId);
+    }
+
+    @Test
+    void createReview_whenValidRequestAndUserAndGameExist_shouldCreateAndReturnReviewResponse() {
+        // Arrange
+        Long currentUserId = user.getId();
+        Long gameId = game.getId();
+        LocalDateTime fixedTestTime = LocalDateTime.now();
+
+        when(userService.getCurrentUserId()).thenReturn(currentUserId);
+        when(userRepository.findById(currentUserId)).thenReturn(Optional.of(user));
+        when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+        when(reviewRepository.findByGameIdAndUserId(gameId, currentUserId)).thenReturn(Optional.empty());
+
+        Review savedReview = Review.builder()
+                .id(2L)
+                .user(user)
+                .game(game)
+                .rating(reviewRequest.getRating())
+                .comment(reviewRequest.getComment())
+                .createdAt(fixedTestTime)
+                .build();
+
+        when(reviewRepository.save(any(Review.class))).thenReturn(savedReview);
+
+        ReviewDTOs.ReviewResponse expectedResponse = ReviewDTOs.ReviewResponse.builder()
+                .id(savedReview.getId())
+                .userId(savedReview.getUser().getId())
+                .email(savedReview.getUser().getEmail())
+                .gameId(savedReview.getGame().getId())
+                .gameTitle(savedReview.getGame().getTitle())
+                .rating(savedReview.getRating())
+                .comment(savedReview.getComment())
+                .createdAt(savedReview.getCreatedAt())
+                .build();
+
+        when(reviewMapper.mapToReviewResponse(savedReview)).thenReturn(expectedResponse);
+
+        // Act
+        ReviewDTOs.ReviewResponse actualResponse = reviewService.createReview(gameId, reviewRequest);
+
+        // Assert
+        assertNotNull(actualResponse);
+        assertEquals(expectedResponse.getId(), actualResponse.getId());
+        assertEquals(expectedResponse.getUserId(), actualResponse.getUserId());
+        assertEquals(expectedResponse.getEmail(), actualResponse.getEmail());
+        assertEquals(expectedResponse.getGameId(), actualResponse.getGameId());
+        assertEquals(expectedResponse.getGameTitle(), actualResponse.getGameTitle());
+        assertEquals(expectedResponse.getRating(), actualResponse.getRating());
+        assertEquals(expectedResponse.getComment(), actualResponse.getComment());
+        assertEquals(expectedResponse.getCreatedAt(), actualResponse.getCreatedAt());
+
+        verify(userService, times(2)).getCurrentUserId();
+        verify(userRepository).findById(currentUserId);
+        verify(gameRepository).findById(gameId);
+        verify(reviewRepository).findByGameIdAndUserId(gameId, currentUserId);
+
+        ArgumentCaptor<Review> reviewArgumentCaptor = ArgumentCaptor.forClass(Review.class);
+        verify(reviewRepository).save(reviewArgumentCaptor.capture());
+        Review capturedReviewForSave = reviewArgumentCaptor.getValue();
+
+        assertNull(capturedReviewForSave.getId());
+        assertEquals(user, capturedReviewForSave.getUser());
+        assertEquals(game, capturedReviewForSave.getGame());
+        assertEquals(reviewRequest.getRating(), capturedReviewForSave.getRating());
+        assertEquals(reviewRequest.getComment(), capturedReviewForSave.getComment());
+        assertEquals(game, capturedReviewForSave.getGame());
+
+        verify(reviewMapper).mapToReviewResponse(savedReview);
     }
 }
