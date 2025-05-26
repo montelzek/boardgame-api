@@ -233,4 +233,69 @@ public class ReviewServiceImplTest {
 
         verify(reviewMapper).mapToReviewResponse(savedReview);
     }
+
+    @Test
+    void createReviewTest_whenUserNotFound_shouldThrowResourceNotFoundException() {
+        // Arrange
+        Long currentUserId = 1L;
+        Long gameId = game.getId();
+        when(userService.getCurrentUserId()).thenReturn(currentUserId);
+        when(userRepository.findById(currentUserId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                reviewService.createReview(gameId, reviewRequest));
+
+        assertEquals("User not found", exception.getMessage());
+        verify(userService).getCurrentUserId();
+        verify(userRepository).findById(currentUserId);
+        verify(gameRepository, never()).findById(anyLong());
+        verify(reviewRepository, never()).save(any());
+    }
+
+    @Test
+    void createReviewTest_whenGameNotFound_shouldThrowResourceNotFoundException() {
+        // Arrange
+        Long currentUserId = user.getId();
+        Long nonExistentGameId = -1L;
+        when(userService.getCurrentUserId()).thenReturn(currentUserId);
+        when(userRepository.findById(currentUserId)).thenReturn(Optional.of(user));
+        when(gameRepository.findById(nonExistentGameId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                reviewService.createReview(nonExistentGameId, reviewRequest));
+
+        assertEquals("Game not found with id: " + nonExistentGameId, exception.getMessage());
+        verify(userService).getCurrentUserId();
+        verify(userRepository).findById(currentUserId);
+        verify(gameRepository).findById(nonExistentGameId);
+        verify(reviewRepository, never()).save(any());
+    }
+
+    @Test
+    void createReviewTest_whenUserAlreadyReviewedGame_shouldThrowIllegalStateException() {
+        // Arrange
+        Long currentUserId = user.getId();
+        Long gameId = game.getId();
+        Review existingReview = Review.builder().id(3L).user(user).game(game).build();
+
+        when(userService.getCurrentUserId()).thenReturn(currentUserId);
+        when(userRepository.findById(currentUserId)).thenReturn(Optional.of(user));
+        when(gameRepository.findById(gameId)).thenReturn(Optional.of(game));
+        when(reviewRepository.findByGameIdAndUserId(gameId, currentUserId)).thenReturn(Optional.of(existingReview));
+
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            reviewService.createReview(gameId, reviewRequest);
+        });
+
+        assertEquals("You have already reviewed this game", exception.getMessage());
+        verify(userService, times(2)).getCurrentUserId();
+        verify(userRepository).findById(currentUserId);
+        verify(gameRepository).findById(gameId);
+        verify(reviewRepository).findByGameIdAndUserId(gameId, currentUserId);
+        verify(reviewRepository, never()).save(any());
+    }
 }
