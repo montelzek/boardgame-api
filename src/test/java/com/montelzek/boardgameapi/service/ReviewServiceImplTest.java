@@ -17,6 +17,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -356,5 +357,52 @@ public class ReviewServiceImplTest {
         assertEquals(expectedReviewResponse.getCreatedAt(), capturedReviewForSave.getCreatedAt());
 
         verify(reviewMapper).mapToReviewResponse(capturedReviewForSave);
+    }
+
+    @Test
+    void updateReviewTest_whenReviewNotFound_shouldThrowResourceNotFoundException() {
+        // Arrange
+        Long nonExistentReviewId = -1L;
+        when(reviewRepository.findById(nonExistentReviewId)).thenReturn(Optional.empty());
+
+        ReviewDTOs.ReviewRequest updateReviewRequest = ReviewDTOs.ReviewRequest.builder()
+                .rating(5)
+                .comment("Updated comment")
+                .build();
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                reviewService.updateReview(nonExistentReviewId, updateReviewRequest));
+
+        assertEquals("Review not found with id: " + nonExistentReviewId, exception.getMessage());
+        verify(reviewRepository).findById(nonExistentReviewId);
+        verify(userService, never()).getCurrentUserId();
+        verify(reviewRepository, never()).save(any(Review.class));
+        verify(reviewMapper, never()).mapToReviewResponse(any(Review.class));
+    }
+
+    @Test
+    void updateReviewTest_whenUserIsNotOwner_shouldThrowAccessDeniedException() {
+        // Arrange
+        Long reviewIdToUpdate = review.getId();
+        Long nonOwnerUserId = 2L;
+
+        ReviewDTOs.ReviewRequest updateReviewRequest = ReviewDTOs.ReviewRequest.builder()
+                .rating(5)
+                .comment("Updated comment")
+                .build();
+
+        when(reviewRepository.findById(reviewIdToUpdate)).thenReturn(Optional.of(review));
+        when(userService.getCurrentUserId()).thenReturn(nonOwnerUserId);
+
+        // Act & Assert
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () ->
+                reviewService.updateReview(reviewIdToUpdate, updateReviewRequest));
+
+        assertEquals("You are not authorized to update this review", exception.getMessage());
+        verify(reviewRepository).findById(reviewIdToUpdate);
+        verify(userService).getCurrentUserId();
+        verify(reviewRepository, never()).save(any(Review.class));
+        verify(reviewMapper, never()).mapToReviewResponse(any(Review.class));
     }
 }
