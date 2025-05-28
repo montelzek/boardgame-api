@@ -453,4 +453,43 @@ public class ReviewServiceImplTest {
         verify(userService).getCurrentUserId();
         verify(reviewRepository).delete(review);
     }
+
+    @Test
+    void deleteReviewTest_whenReviewNotExist_shouldThrowResourceNotFoundException() {
+        // Arrange
+        Long nonExistentReviewId = -1L;
+
+        when(reviewRepository.findById(nonExistentReviewId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                reviewService.deleteReview(nonExistentReviewId));
+
+        assertEquals("Review not found with id: " + nonExistentReviewId, exception.getMessage());
+        verify(reviewRepository).findById(nonExistentReviewId);
+        verify(reviewRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteReviewTest_whenUserIsNotOwnerAndNotAdmin_shouldThrowAccessDeniedException() {
+        // Arrange
+        Long reviewIdToDelete = review.getId();
+        Long currentUserId = 10L;
+
+        when(reviewRepository.findById(reviewIdToDelete)).thenReturn(Optional.of(review));
+        when(userService.getCurrentUserId()).thenReturn(currentUserId);
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                "user", null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
+
+        // Act & Assert
+        AccessDeniedException exception = assertThrows(AccessDeniedException.class, () ->
+                reviewService.deleteReview(reviewIdToDelete));
+
+        assertEquals("You are not authorized to delete this review", exception.getMessage());
+        verify(reviewRepository).findById(reviewIdToDelete);
+        verify(reviewRepository, never()).delete(any());
+    }
 }
