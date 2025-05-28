@@ -18,6 +18,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -404,5 +409,48 @@ public class ReviewServiceImplTest {
         verify(userService).getCurrentUserId();
         verify(reviewRepository, never()).save(any(Review.class));
         verify(reviewMapper, never()).mapToReviewResponse(any(Review.class));
+    }
+
+    @Test
+    void deleteReviewTest_whenReviewExistsAndUserIsOwner_shouldDeleteReview() {
+        // Arrange
+        Long reviewIdToDelete = review.getId();
+        Long currentUserId = user.getId();
+
+        when(reviewRepository.findById(reviewIdToDelete)).thenReturn(Optional.of(review));
+        when(userService.getCurrentUserId()).thenReturn(currentUserId);
+        doNothing().when(reviewRepository).delete(review);
+
+        // Act
+        reviewService.deleteReview(reviewIdToDelete);
+
+        // Assert
+        verify(reviewRepository).findById(reviewIdToDelete);
+        verify(userService).getCurrentUserId();
+        verify(reviewRepository).delete(review);
+    }
+
+    @Test
+    void deleteReviewTest_whenReviewExistsAndUserIsAdmin_shouldDeleteReview() {
+        // Arrange
+        Long reviewIdToDelete = review.getId();
+        Long adminCurrentUserId = 2L;
+
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        Authentication auth = new UsernamePasswordAuthenticationToken(
+                "admin", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        context.setAuthentication(auth);
+        SecurityContextHolder.setContext(context);
+
+        when(reviewRepository.findById(reviewIdToDelete)).thenReturn(Optional.of(review));
+        when(userService.getCurrentUserId()).thenReturn(adminCurrentUserId);
+
+        // Act
+        reviewService.deleteReview(reviewIdToDelete);
+
+        // Assert
+        verify(reviewRepository).findById(reviewIdToDelete);
+        verify(userService).getCurrentUserId();
+        verify(reviewRepository).delete(review);
     }
 }
