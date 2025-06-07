@@ -18,15 +18,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class GameServiceImplTest {
@@ -149,11 +146,45 @@ public class GameServiceImplTest {
         when(gameRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
         // Act & Assert
-        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
-            gameService.getGameById(nonExistentId);
-        });
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                gameService.getGameById(nonExistentId));
 
         assertEquals("Game not found with id: " + nonExistentId, exception.getMessage());
         verify(gameRepository).findById(nonExistentId);
+    }
+
+    @Test
+    void listAllGamesTest_whenGamesExist_shouldReturnListOfGameResponses() {
+        // Arrange
+        when(gameRepository.findAll()).thenReturn(List.of(game1));
+        when(gameMapper.mapToGameResponse(game1)).thenReturn(gameResponse);
+
+        // Act
+        List<GameDTOs.GameResponse> result = gameService.listAllGames();
+
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
+        assertEquals(gameResponse.getTitle(), result.getFirst().getTitle());
+
+        verify(gameRepository).findAll();
+        verify(gameMapper, times(1)).mapToGameResponse(game1);
+    }
+
+    @Test
+    void listAllGamesTest_whenNoGames_shouldReturnEmptyList() {
+        // Arrange
+        when(gameRepository.findAll()).thenReturn(Collections.emptyList());
+
+        // Act
+        List<GameDTOs.GameResponse> result = gameService.listAllGames();
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        verify(gameRepository).findAll();
+        verify(gameMapper, never()).mapToGameResponse(any());
     }
 }
