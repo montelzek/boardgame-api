@@ -18,10 +18,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -102,7 +102,7 @@ public class GameServiceImplTest {
     }
 
     @Test
-    void createGame_shouldSaveAndReturnGame() {
+    void createGameTest_shouldSaveAndReturnGame() {
         // Arrange
         when(gameRepository.save(any(Game.class))).thenReturn(game1);
 
@@ -115,5 +115,29 @@ public class GameServiceImplTest {
 
         verify(gameMapper).mapGameRequestToGame(eq(gameRequest), any(Game.class));
         verify(gameRepository).save(any(Game.class));
+    }
+
+    @Test
+    void getGameByIdTest_whenGameFound_shouldReturnGameResponseWithReviews() {
+        // Arrange
+        when(gameRepository.findById(1L)).thenReturn(Optional.of(game1));
+        when(gameMapper.mapToGameResponse(game1)).thenReturn(gameResponse);
+        when(reviewMapper.mapToReviewResponse(review1)).thenReturn(reviewResponse);
+
+        // Act
+        GameDTOs.GameResponse actualResponse = gameService.getGameById(1L);
+
+        // Assert
+        assertNotNull(actualResponse);
+        assertEquals(game1.getId(), actualResponse.getId());
+        assertEquals(game1.getTitle(), actualResponse.getTitle());
+        assertFalse(actualResponse.getReviews().isEmpty());
+        assertEquals(1, actualResponse.getReviews().size());
+        assertEquals(reviewResponse.getId(), actualResponse.getReviews().getFirst().getId());
+        assertEquals(reviewResponse.getComment(), actualResponse.getReviews().getFirst().getComment());
+
+        verify(gameRepository).findById(1L);
+        verify(gameMapper).mapToGameResponse(game1);
+        verify(reviewMapper).mapToReviewResponse(review1);
     }
 }
