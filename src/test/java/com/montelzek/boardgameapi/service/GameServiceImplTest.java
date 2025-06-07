@@ -2,6 +2,7 @@ package com.montelzek.boardgameapi.service;
 
 import com.montelzek.boardgameapi.dto.GameDTOs;
 import com.montelzek.boardgameapi.dto.ReviewDTOs;
+import com.montelzek.boardgameapi.exception.ResourceNotFoundException;
 import com.montelzek.boardgameapi.mapper.GameMapper;
 import com.montelzek.boardgameapi.mapper.ReviewMapper;
 import com.montelzek.boardgameapi.model.Game;
@@ -139,5 +140,20 @@ public class GameServiceImplTest {
         verify(gameRepository).findById(1L);
         verify(gameMapper).mapToGameResponse(game1);
         verify(reviewMapper).mapToReviewResponse(review1);
+    }
+
+    @Test
+    void getGameByIdTest_whenGameNotFound_shouldThrowResourceNotFoundException() {
+        // Arrange
+        Long nonExistentId = 99L;
+        when(gameRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            gameService.getGameById(nonExistentId);
+        });
+
+        assertEquals("Game not found with id: " + nonExistentId, exception.getMessage());
+        verify(gameRepository).findById(nonExistentId);
     }
 }
