@@ -221,4 +221,36 @@ public class GameServiceImplTest {
         verify(gameRepository, never()).save(any());
         verify(gameMapper, never()).mapGameRequestToGame(any(), any());
     }
+
+    @Test
+    void deleteGameTest_whenGameFound_shouldDeleteGame() {
+        // Arrange
+        when(gameRepository.findById(1L)).thenReturn(Optional.of(game1));
+        doNothing().when(gameRepository).delete(any(Game.class));
+
+        // Act
+        gameService.deleteGame(1L);
+
+        // Assert
+        verify(gameRepository).findById(1L);
+        verify(gameRepository).delete(gameArgumentCaptor.capture());
+
+        assertEquals(game1.getId(), gameArgumentCaptor.getValue().getId());
+        assertSame(game1, gameArgumentCaptor.getValue());
+    }
+
+    @Test
+    void deleteGameTest_whenGameNotFound_shouldThrowResourceNotFoundException() {
+        // Arrange
+        Long nonExistentId = 99L;
+        when(gameRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                gameService.deleteGame(nonExistentId));
+
+        assertEquals("Game not found with id: " + nonExistentId, exception.getMessage());
+        verify(gameRepository).findById(nonExistentId);
+        verify(gameRepository, never()).delete(any());
+    }
 }
