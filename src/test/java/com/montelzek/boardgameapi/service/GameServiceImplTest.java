@@ -187,4 +187,38 @@ public class GameServiceImplTest {
         verify(gameRepository).findAll();
         verify(gameMapper, never()).mapToGameResponse(any());
     }
+
+    @Test
+    void updateGameTest_whenGameFound_shouldUpdateAndReturnGame() {
+        // Arrange
+        when(gameRepository.findById(1L)).thenReturn(Optional.of(game1));
+        when(gameRepository.save(any(Game.class))).thenReturn(game1);
+
+        // Act
+        Game updatedGame = gameService.updateGame(gameRequest, 1L);
+
+        // Assert
+        assertNotNull(updatedGame);
+        verify(gameRepository).findById(1L);
+        verify(gameMapper).mapGameRequestToGame(gameRequest, game1);
+        verify(gameRepository).save(gameArgumentCaptor.capture());
+
+        assertSame(game1, gameArgumentCaptor.getValue());
+    }
+
+    @Test
+    void updateGameTest_whenGameNotFound_shouldThrowResourceNotFoundException() {
+        // Arrange
+        Long nonExistentId = 99L;
+        when(gameRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
+                gameService.updateGame(gameRequest, nonExistentId));
+
+        assertEquals("Game not found with id: " + nonExistentId, exception.getMessage());
+        verify(gameRepository).findById(nonExistentId);
+        verify(gameRepository, never()).save(any());
+        verify(gameMapper, never()).mapGameRequestToGame(any(), any());
+    }
 }
