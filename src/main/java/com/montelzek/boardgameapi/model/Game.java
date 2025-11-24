@@ -43,4 +43,10 @@ public class Game {
 
     @ManyToMany(mappedBy = "games")
     private Set<User> users = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "game_category",
+               joinColumns = @JoinColumn(name = "game_id"),
+               inverseJoinColumns = @JoinColumn(name = "category_id"))
+    private Set<Category> categories;
 }
