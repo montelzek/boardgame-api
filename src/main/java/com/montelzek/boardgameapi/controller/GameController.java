@@ -1,6 +1,7 @@
 package com.montelzek.boardgameapi.controller;
 
-import com.montelzek.boardgameapi.dto.GameDTOs;
+import com.montelzek.boardgameapi.dto.GameRequest;
+import com.montelzek.boardgameapi.dto.GameResponse;
 import com.montelzek.boardgameapi.model.Game;
 import com.montelzek.boardgameapi.service.GameService;
 import jakarta.validation.Valid;
@@ -21,20 +22,20 @@ public class GameController {
     private final GameService gameService;
 
     @GetMapping
-    public ResponseEntity<List<GameDTOs.GameResponse>> getAllGames() {
-        List<GameDTOs.GameResponse> games = gameService.listAllGames();
+    public ResponseEntity<List<GameResponse>> getAllGames() {
+        List<GameResponse> games = gameService.listAllGames();
         return ResponseEntity.ok(games);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<GameDTOs.GameResponse> getGameById(@PathVariable Long id) {
-        GameDTOs.GameResponse game = gameService.getGameById(id);
+    public ResponseEntity<GameResponse> getGameById(@PathVariable Long id) {
+        GameResponse game = gameService.getGameById(id);
         return ResponseEntity.ok(game);
     }
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<GameDTOs.GameResponse> createGame(@Valid @RequestBody GameDTOs.GameRequest gameRequest) {
+    public ResponseEntity<GameResponse> createGame(@Valid @RequestBody GameRequest gameRequest) {
         Game game = gameService.createGame(gameRequest);
 
         URI location = ServletUriComponentsBuilder
@@ -48,8 +49,8 @@ public class GameController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<GameDTOs.GameResponse> updateGame(@PathVariable Long id,
-            @Valid @RequestBody GameDTOs.GameRequest gameRequest) {
+    public ResponseEntity<GameResponse> updateGame(@PathVariable Long id,
+            @Valid @RequestBody GameRequest gameRequest) {
 
         Game game = gameService.updateGame(gameRequest, id);
         return ResponseEntity.ok(gameService.getGameById(game.getId()));

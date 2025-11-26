@@ -1,7 +1,7 @@
 package com.montelzek.boardgameapi.controller;
 
-import com.montelzek.boardgameapi.dto.CollectionDTO;
-import com.montelzek.boardgameapi.dto.GameDTOs;
+import com.montelzek.boardgameapi.dto.CollectionRequest;
+import com.montelzek.boardgameapi.dto.GameResponse;
 import com.montelzek.boardgameapi.service.CollectionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,18 +21,18 @@ public class CollectionController {
     private final CollectionService collectionService;
 
     @GetMapping
-    public ResponseEntity<List<GameDTOs.GameResponse>> getUserCollection(@PathVariable Long userId) {
-        List<GameDTOs.GameResponse> collection = collectionService.getUserCollection(userId);
+    public ResponseEntity<List<GameResponse>> getUserCollection(@PathVariable Long userId) {
+        List<GameResponse> collection = collectionService.getUserCollection(userId);
         return ResponseEntity.ok(collection);
     }
 
     @PostMapping
     public ResponseEntity<?> addGameToCollection(@PathVariable Long userId,
-                                                    @Valid @RequestBody CollectionDTO.CollectionRequest collectionRequest) {
-        collectionService.addGameToCollection(userId, collectionRequest.getGameId());
+                                                    @Valid @RequestBody CollectionRequest collectionRequest) {
+        collectionService.addGameToCollection(userId, collectionRequest.gameId());
 
         Map<String, String> response = new HashMap<>();
-        response.put("message", "Game with ID " + collectionRequest.getGameId()
+        response.put("message", "Game with ID " + collectionRequest.gameId()
                 + " added to user " + userId + "'s collection successfully");
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);

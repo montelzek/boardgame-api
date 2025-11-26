@@ -1,6 +1,7 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.ReviewDTOs;
+import com.montelzek.boardgameapi.dto.ReviewRequest;
+import com.montelzek.boardgameapi.dto.ReviewResponse;
 import com.montelzek.boardgameapi.exception.ResourceNotFoundException;
 import com.montelzek.boardgameapi.mapper.ReviewMapper;
 import com.montelzek.boardgameapi.model.Game;
@@ -30,7 +31,7 @@ public class ReviewServiceImpl implements ReviewService{
     private final UserServiceImpl userService;
 
     @Override
-    public List<ReviewDTOs.ReviewResponse> getReviewsByGameId(Long gameId) {
+    public List<ReviewResponse> getReviewsByGameId(Long gameId) {
 
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
@@ -43,7 +44,7 @@ public class ReviewServiceImpl implements ReviewService{
     }
 
     @Override
-    public ReviewDTOs.ReviewResponse createReview(Long gameId, ReviewDTOs.ReviewRequest reviewRequest) {
+    public ReviewResponse createReview(Long gameId, ReviewRequest reviewRequest) {
 
         User user = userRepository.findById(userService.getCurrentUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -59,8 +60,8 @@ public class ReviewServiceImpl implements ReviewService{
         Review review = new Review();
         review.setGame(game);
         review.setUser(user);
-        review.setRating(reviewRequest.getRating());
-        review.setComment(reviewRequest.getComment());
+        review.setRating(reviewRequest.rating());
+        review.setComment(reviewRequest.comment());
         review.setCreatedAt(LocalDateTime.now());
 
         Review savedReview = reviewRepository.save(review);
@@ -69,7 +70,7 @@ public class ReviewServiceImpl implements ReviewService{
     }
 
     @Override
-    public ReviewDTOs.ReviewResponse updateReview(Long reviewId, ReviewDTOs.ReviewRequest reviewRequest) {
+    public ReviewResponse updateReview(Long reviewId, ReviewRequest reviewRequest) {
 
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new ResourceNotFoundException("Review not found with id: " + reviewId));
@@ -78,8 +79,8 @@ public class ReviewServiceImpl implements ReviewService{
             throw new AccessDeniedException("You are not authorized to update this review");
         }
 
-        review.setRating(reviewRequest.getRating());
-        review.setComment(reviewRequest.getComment());
+        review.setRating(reviewRequest.rating());
+        review.setComment(reviewRequest.comment());
 
         Review updatedReview = reviewRepository.save(review);
 

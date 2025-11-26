@@ -1,6 +1,6 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.GameDTOs;
+import com.montelzek.boardgameapi.dto.GameResponse;
 import com.montelzek.boardgameapi.exception.ResourceNotFoundException;
 import com.montelzek.boardgameapi.mapper.GameMapper;
 import com.montelzek.boardgameapi.model.Game;
@@ -27,7 +27,7 @@ public class CollectionServiceImpl implements CollectionService{
     private final GameMapper gameMapper;
 
     @Override
-    public List<GameDTOs.GameResponse> getUserCollection(Long userId) {
+    public List<GameResponse> getUserCollection(Long userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));

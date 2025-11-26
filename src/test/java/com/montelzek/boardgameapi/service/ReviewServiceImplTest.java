@@ -1,6 +1,7 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.ReviewDTOs;
+import com.montelzek.boardgameapi.dto.ReviewRequest;
+import com.montelzek.boardgameapi.dto.ReviewResponse;
 import com.montelzek.boardgameapi.exception.ResourceNotFoundException;
 import com.montelzek.boardgameapi.mapper.ReviewMapper;
 import com.montelzek.boardgameapi.model.Game;
@@ -58,8 +59,8 @@ public class ReviewServiceImplTest {
     private Review review;
     private Game game;
     private User user;
-    private ReviewDTOs.ReviewResponse reviewResponse;
-    private ReviewDTOs.ReviewRequest reviewRequest;
+    private ReviewResponse reviewResponse;
+    private ReviewRequest reviewRequest;
 
     @BeforeEach
     void setUp() {
@@ -93,21 +94,18 @@ public class ReviewServiceImplTest {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        reviewResponse = ReviewDTOs.ReviewResponse.builder()
-                .id(1L)
-                .gameId(game.getId())
-                .gameTitle(game.getTitle())
-                .userId(user.getId())
-                .email(user.getEmail())
-                .rating(7)
-                .comment("Test Comment")
-                .createdAt(review.getCreatedAt())
-                .build();
+        reviewResponse = new ReviewResponse(
+                1L,
+                game.getId(),
+                game.getTitle(),
+                user.getId(),
+                user.getEmail(),
+                7,
+                "Test Comment",
+                review.getCreatedAt()
+        );
 
-        reviewRequest = ReviewDTOs.ReviewRequest.builder()
-                .rating(9)
-                .comment("Excellent game!")
-                .build();
+        reviewRequest = new ReviewRequest(9, "Excellent game!");
     }
 
     @Test
@@ -119,20 +117,20 @@ public class ReviewServiceImplTest {
         when(reviewMapper.mapToReviewResponse(any(Review.class))).thenReturn(reviewResponse);
 
         // Act
-        List<ReviewDTOs.ReviewResponse> actualResponse = reviewService.getReviewsByGameId(game.getId());
+        List<ReviewResponse> actualResponse = reviewService.getReviewsByGameId(game.getId());
 
         // Assert
         assertNotNull(actualResponse);
         assertEquals(actualResponse.size(), reviews.size());
-        ReviewDTOs.ReviewResponse firstReview = actualResponse.getFirst();
-        assertEquals(review.getId(), firstReview.getId());
-        assertEquals(review.getGame().getId(), firstReview.getGameId());
-        assertEquals(review.getGame().getTitle(), firstReview.getGameTitle());
-        assertEquals(review.getUser().getId(), firstReview.getUserId());
-        assertEquals(review.getUser().getEmail(), firstReview.getEmail());
-        assertEquals(review.getRating(), firstReview.getRating());
-        assertEquals(review.getComment(), firstReview.getComment());
-        assertEquals(review.getCreatedAt(), firstReview.getCreatedAt());
+        ReviewResponse firstReview = actualResponse.getFirst();
+        assertEquals(review.getId(), firstReview.id());
+        assertEquals(review.getGame().getId(), firstReview.gameId());
+        assertEquals(review.getGame().getTitle(), firstReview.gameTitle());
+        assertEquals(review.getUser().getId(), firstReview.userId());
+        assertEquals(review.getUser().getEmail(), firstReview.email());
+        assertEquals(review.getRating(), firstReview.rating());
+        assertEquals(review.getComment(), firstReview.comment());
+        assertEquals(review.getCreatedAt(), firstReview.createdAt());
 
         verify(gameRepository).findById(1L);
         verify(reviewRepository).findByGame(game);
@@ -147,7 +145,7 @@ public class ReviewServiceImplTest {
         when(reviewRepository.findByGame(game)).thenReturn(reviews);
 
         // Act
-        List<ReviewDTOs.ReviewResponse> actualResponse = reviewService.getReviewsByGameId(game.getId());
+        List<ReviewResponse> actualResponse = reviewService.getReviewsByGameId(game.getId());
 
         // Assert
         assertNotNull(actualResponse);
@@ -187,39 +185,39 @@ public class ReviewServiceImplTest {
                 .id(2L)
                 .user(user)
                 .game(game)
-                .rating(reviewRequest.getRating())
-                .comment(reviewRequest.getComment())
+                .rating(reviewRequest.rating())
+                .comment(reviewRequest.comment())
                 .createdAt(fixedTestTime)
                 .build();
 
         when(reviewRepository.save(any(Review.class))).thenReturn(savedReview);
 
-        ReviewDTOs.ReviewResponse expectedResponse = ReviewDTOs.ReviewResponse.builder()
-                .id(savedReview.getId())
-                .userId(savedReview.getUser().getId())
-                .email(savedReview.getUser().getEmail())
-                .gameId(savedReview.getGame().getId())
-                .gameTitle(savedReview.getGame().getTitle())
-                .rating(savedReview.getRating())
-                .comment(savedReview.getComment())
-                .createdAt(savedReview.getCreatedAt())
-                .build();
+        ReviewResponse expectedResponse = new ReviewResponse(
+                savedReview.getId(),
+                savedReview.getGame().getId(),
+                savedReview.getGame().getTitle(),
+                savedReview.getUser().getId(),
+                savedReview.getUser().getEmail(),
+                savedReview.getRating(),
+                savedReview.getComment(),
+                savedReview.getCreatedAt()
+        );
 
         when(reviewMapper.mapToReviewResponse(savedReview)).thenReturn(expectedResponse);
 
         // Act
-        ReviewDTOs.ReviewResponse actualResponse = reviewService.createReview(gameId, reviewRequest);
+        ReviewResponse actualResponse = reviewService.createReview(gameId, reviewRequest);
 
         // Assert
         assertNotNull(actualResponse);
-        assertEquals(expectedResponse.getId(), actualResponse.getId());
-        assertEquals(expectedResponse.getUserId(), actualResponse.getUserId());
-        assertEquals(expectedResponse.getEmail(), actualResponse.getEmail());
-        assertEquals(expectedResponse.getGameId(), actualResponse.getGameId());
-        assertEquals(expectedResponse.getGameTitle(), actualResponse.getGameTitle());
-        assertEquals(expectedResponse.getRating(), actualResponse.getRating());
-        assertEquals(expectedResponse.getComment(), actualResponse.getComment());
-        assertEquals(expectedResponse.getCreatedAt(), actualResponse.getCreatedAt());
+        assertEquals(expectedResponse.id(), actualResponse.id());
+        assertEquals(expectedResponse.userId(), actualResponse.userId());
+        assertEquals(expectedResponse.email(), actualResponse.email());
+        assertEquals(expectedResponse.gameId(), actualResponse.gameId());
+        assertEquals(expectedResponse.gameTitle(), actualResponse.gameTitle());
+        assertEquals(expectedResponse.rating(), actualResponse.rating());
+        assertEquals(expectedResponse.comment(), actualResponse.comment());
+        assertEquals(expectedResponse.createdAt(), actualResponse.createdAt());
 
         verify(userService, times(2)).getCurrentUserId();
         verify(userRepository).findById(currentUserId);
@@ -233,8 +231,8 @@ public class ReviewServiceImplTest {
         assertNull(capturedReviewForSave.getId());
         assertEquals(user, capturedReviewForSave.getUser());
         assertEquals(game, capturedReviewForSave.getGame());
-        assertEquals(reviewRequest.getRating(), capturedReviewForSave.getRating());
-        assertEquals(reviewRequest.getComment(), capturedReviewForSave.getComment());
+        assertEquals(reviewRequest.rating(), capturedReviewForSave.getRating());
+        assertEquals(reviewRequest.comment(), capturedReviewForSave.getComment());
         assertEquals(game, capturedReviewForSave.getGame());
 
         verify(reviewMapper).mapToReviewResponse(savedReview);
@@ -311,41 +309,38 @@ public class ReviewServiceImplTest {
         Long reviewIdToUpdate = review.getId();
         Long currentUserId = user.getId();
 
-        ReviewDTOs.ReviewRequest updateReviewRequest = ReviewDTOs.ReviewRequest.builder()
-                .rating(5)
-                .comment("Updated comment")
-                .build();
+        ReviewRequest updateReviewRequest = new ReviewRequest(5, "Updated comment");
 
         when(reviewRepository.findById(reviewIdToUpdate)).thenReturn(Optional.of(review));
         when(userService.getCurrentUserId()).thenReturn(currentUserId);
         when(reviewRepository.save(any(Review.class))).thenAnswer(invocation ->
                 invocation.getArgument(0));
 
-        ReviewDTOs.ReviewResponse expectedReviewResponse = ReviewDTOs.ReviewResponse.builder()
-                .id(review.getId())
-                .userId(user.getId())
-                .email(user.getEmail())
-                .gameId(game.getId())
-                .gameTitle(game.getTitle())
-                .rating(updateReviewRequest.getRating())
-                .comment(updateReviewRequest.getComment())
-                .createdAt(review.getCreatedAt())
-                .build();
+        ReviewResponse expectedReviewResponse = new ReviewResponse(
+                review.getId(),
+                game.getId(),
+                game.getTitle(),
+                user.getId(),
+                user.getEmail(),
+                updateReviewRequest.rating(),
+                updateReviewRequest.comment(),
+                review.getCreatedAt()
+        );
         when(reviewMapper.mapToReviewResponse(any(Review.class))).thenReturn(expectedReviewResponse);
 
         // Act
-        ReviewDTOs.ReviewResponse actualResponse = reviewService.updateReview(reviewIdToUpdate, updateReviewRequest);
+        ReviewResponse actualResponse = reviewService.updateReview(reviewIdToUpdate, updateReviewRequest);
 
         // Assert
         assertNotNull(actualResponse);
-        assertEquals(expectedReviewResponse.getId(), actualResponse.getId());
-        assertEquals(expectedReviewResponse.getUserId(), actualResponse.getUserId());
-        assertEquals(expectedReviewResponse.getEmail(), actualResponse.getEmail());
-        assertEquals(expectedReviewResponse.getGameId(), actualResponse.getGameId());
-        assertEquals(expectedReviewResponse.getGameTitle(), actualResponse.getGameTitle());
-        assertEquals(updateReviewRequest.getRating(), actualResponse.getRating());
-        assertEquals(updateReviewRequest.getComment(), actualResponse.getComment());
-        assertEquals(expectedReviewResponse.getCreatedAt(), actualResponse.getCreatedAt());
+        assertEquals(expectedReviewResponse.id(), actualResponse.id());
+        assertEquals(expectedReviewResponse.userId(), actualResponse.userId());
+        assertEquals(expectedReviewResponse.email(), actualResponse.email());
+        assertEquals(expectedReviewResponse.gameId(), actualResponse.gameId());
+        assertEquals(expectedReviewResponse.gameTitle(), actualResponse.gameTitle());
+        assertEquals(updateReviewRequest.rating(), actualResponse.rating());
+        assertEquals(updateReviewRequest.comment(), actualResponse.comment());
+        assertEquals(expectedReviewResponse.createdAt(), actualResponse.createdAt());
 
         verify(reviewRepository).findById(reviewIdToUpdate);
         verify(userService).getCurrentUserId();
@@ -357,9 +352,9 @@ public class ReviewServiceImplTest {
         assertEquals(review.getId(), capturedReviewForSave.getId());
         assertEquals(user, capturedReviewForSave.getUser());
         assertEquals(game, capturedReviewForSave.getGame());
-        assertEquals(updateReviewRequest.getRating(), capturedReviewForSave.getRating());
-        assertEquals(updateReviewRequest.getComment(), capturedReviewForSave.getComment());
-        assertEquals(expectedReviewResponse.getCreatedAt(), capturedReviewForSave.getCreatedAt());
+        assertEquals(updateReviewRequest.rating(), capturedReviewForSave.getRating());
+        assertEquals(updateReviewRequest.comment(), capturedReviewForSave.getComment());
+        assertEquals(expectedReviewResponse.createdAt(), capturedReviewForSave.getCreatedAt());
 
         verify(reviewMapper).mapToReviewResponse(capturedReviewForSave);
     }
@@ -370,10 +365,7 @@ public class ReviewServiceImplTest {
         Long nonExistentReviewId = -1L;
         when(reviewRepository.findById(nonExistentReviewId)).thenReturn(Optional.empty());
 
-        ReviewDTOs.ReviewRequest updateReviewRequest = ReviewDTOs.ReviewRequest.builder()
-                .rating(5)
-                .comment("Updated comment")
-                .build();
+        ReviewRequest updateReviewRequest = new ReviewRequest(5, "Updated comment");
 
         // Act & Assert
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
@@ -392,10 +384,7 @@ public class ReviewServiceImplTest {
         Long reviewIdToUpdate = review.getId();
         Long nonOwnerUserId = 2L;
 
-        ReviewDTOs.ReviewRequest updateReviewRequest = ReviewDTOs.ReviewRequest.builder()
-                .rating(5)
-                .comment("Updated comment")
-                .build();
+        ReviewRequest updateReviewRequest = new ReviewRequest(5, "Updated comment");
 
         when(reviewRepository.findById(reviewIdToUpdate)).thenReturn(Optional.of(review));
         when(userService.getCurrentUserId()).thenReturn(nonOwnerUserId);

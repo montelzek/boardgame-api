@@ -1,6 +1,6 @@
 package com.montelzek.boardgameapi.mapper;
 
-import com.montelzek.boardgameapi.dto.ReviewDTOs;
+import com.montelzek.boardgameapi.dto.ReviewResponse;
 import com.montelzek.boardgameapi.model.Game;
 import com.montelzek.boardgameapi.model.Review;
 import com.montelzek.boardgameapi.model.Role;
@@ -46,16 +46,16 @@ class ReviewMapperTest {
                 .createdAt(LocalDateTime.now())
                 .build();
         // Act
-        ReviewDTOs.ReviewResponse reviewResponse = reviewMapper.mapToReviewResponse(review);
+        ReviewResponse reviewResponse = reviewMapper.mapToReviewResponse(review);
         // Assert
-        assertEquals(reviewResponse.getId(), review.getId());
-        assertEquals(reviewResponse.getGameId(), review.getGame().getId());
-        assertEquals(reviewResponse.getGameTitle(), review.getGame().getTitle());
-        assertEquals(reviewResponse.getUserId(), review.getUser().getId());
-        assertEquals(reviewResponse.getEmail(), review.getUser().getEmail());
-        assertEquals(reviewResponse.getRating(), review.getRating());
-        assertEquals(reviewResponse.getComment(), review.getComment());
-        assertEquals(reviewResponse.getCreatedAt(), review.getCreatedAt());
+        assertEquals(reviewResponse.id(), review.getId());
+        assertEquals(reviewResponse.gameId(), review.getGame().getId());
+        assertEquals(reviewResponse.gameTitle(), review.getGame().getTitle());
+        assertEquals(reviewResponse.userId(), review.getUser().getId());
+        assertEquals(reviewResponse.email(), review.getUser().getEmail());
+        assertEquals(reviewResponse.rating(), review.getRating());
+        assertEquals(reviewResponse.comment(), review.getComment());
+        assertEquals(reviewResponse.createdAt(), review.getCreatedAt());
     }
 
 }

@@ -1,16 +1,20 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.GameDTOs;
-import com.montelzek.boardgameapi.dto.ReviewDTOs;
+import com.montelzek.boardgameapi.dto.CategoryDto;
+import com.montelzek.boardgameapi.dto.GameRequest;
+import com.montelzek.boardgameapi.dto.GameResponse;
+import com.montelzek.boardgameapi.dto.ReviewResponse;
 import com.montelzek.boardgameapi.exception.ResourceNotFoundException;
 import com.montelzek.boardgameapi.mapper.GameMapper;
 import com.montelzek.boardgameapi.mapper.ReviewMapper;
+import com.montelzek.boardgameapi.model.Category;
 import com.montelzek.boardgameapi.model.Game;
 import com.montelzek.boardgameapi.repository.GameRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,7 +26,7 @@ public class GameServiceImpl implements GameService{
     private final ReviewMapper reviewMapper;
 
     @Override
-    public Game createGame(GameDTOs.GameRequest gameRequest) {
+    public Game createGame(GameRequest gameRequest) {
 
         Game newGame = new Game();
         gameMapper.mapGameRequestToGame(gameRequest, newGame);
@@ -31,39 +35,44 @@ public class GameServiceImpl implements GameService{
     }
 
     @Override
-    public GameDTOs.GameResponse getGameById(Long gameId) {
-        Game game = gameRepository.findById(gameId)
+    public GameResponse getGameById(Long gameId) {
+        Game game = gameRepository.findGameByIdWithCategories(gameId)
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
 
-        List<ReviewDTOs.ReviewResponse> reviews = game.getReviews().stream()
+        Set<CategoryDto> categories = game.getCategories().stream()
+                .map(this::mapToCategoryDto)
+                .collect(Collectors.toSet());
+
+        List<ReviewResponse> reviews = game.getReviews().stream()
                 .map(reviewMapper::mapToReviewResponse)
                 .collect(Collectors.toList());
 
-        GameDTOs.GameResponse gameResponse = gameMapper.mapToGameResponse(game);
+        GameResponse baseResponse = gameMapper.mapToGameResponse(game);
 
-        return GameDTOs.GameResponse.builder()
-                .id(gameResponse.getId())
-                .title(gameResponse.getTitle())
-                .description(gameResponse.getDescription())
-                .minPlayers(gameResponse.getMinPlayers())
-                .maxPlayers(gameResponse.getMaxPlayers())
-                .playTime(gameResponse.getPlayTime())
-                .publisher(gameResponse.getPublisher())
-                .releaseYear(gameResponse.getReleaseYear())
-                .reviews(reviews)
-                .build();
+        return new GameResponse(
+                baseResponse.id(),
+                baseResponse.title(),
+                baseResponse.description(),
+                baseResponse.minPlayers(),
+                baseResponse.maxPlayers(),
+                baseResponse.playTime(),
+                baseResponse.publisher(),
+                baseResponse.releaseYear(),
+                categories,
+                reviews
+        );
     }
 
 
     @Override
-    public List<GameDTOs.GameResponse> listAllGames() {
+    public List<GameResponse> listAllGames() {
         return gameRepository.findAll().stream()
                 .map(gameMapper::mapToGameResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public Game updateGame(GameDTOs.GameRequest gameRequest, Long gameId) {
+    public Game updateGame(GameRequest gameRequest, Long gameId) {
         Game game = gameRepository.findById(gameId)
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
 
@@ -77,5 +86,9 @@ public class GameServiceImpl implements GameService{
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + id));
 
         gameRepository.delete(game);
+    }
+
+    private CategoryDto mapToCategoryDto(Category category) {
+        return new CategoryDto(category.getId(), category.getName());
     }
 }

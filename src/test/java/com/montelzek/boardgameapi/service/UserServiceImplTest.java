@@ -1,8 +1,9 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.GameDTOs;
-import com.montelzek.boardgameapi.dto.ReviewDTOs;
-import com.montelzek.boardgameapi.dto.UserDTOs;
+import com.montelzek.boardgameapi.dto.GameResponse;
+import com.montelzek.boardgameapi.dto.ReviewResponse;
+import com.montelzek.boardgameapi.dto.UserResponse;
+import com.montelzek.boardgameapi.dto.UserUpdateRequest;
 import com.montelzek.boardgameapi.exception.ResourceNotFoundException;
 import com.montelzek.boardgameapi.mapper.GameMapper;
 import com.montelzek.boardgameapi.mapper.ReviewMapper;
@@ -65,9 +66,9 @@ public class UserServiceImplTest {
     private User anotherUser;
     private Game game;
     private Review review;
-    private GameDTOs.GameResponse gameResponse;
-    private ReviewDTOs.ReviewResponse reviewResponse;
-    private UserDTOs.UserUpdateRequest userUpdateRequest;
+    private GameResponse gameResponse;
+    private ReviewResponse reviewResponse;
+    private UserUpdateRequest userUpdateRequest;
 
     @BeforeEach
     void setUp() {
@@ -103,20 +104,34 @@ public class UserServiceImplTest {
         user.getGames().add(game);
         user.getReviews().add(review);
 
-        gameResponse = GameDTOs.GameResponse.builder()
-                .id(10L)
-                .title("Test Game")
-                .build();
-        reviewResponse = ReviewDTOs.ReviewResponse.builder()
-                .id(20L)
-                .comment("Test Review")
-                .build();
+        gameResponse = new GameResponse(
+                10L,
+                "Test Game",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                Collections.emptySet(),
+                Collections.emptyList()
+        );
+        reviewResponse = new ReviewResponse(
+                20L,
+                game.getId(),
+                game.getTitle(),
+                user.getId(),
+                user.getEmail(),
+                null,
+                "Test Review",
+                null
+        );
 
-        userUpdateRequest = UserDTOs.UserUpdateRequest.builder()
-                .fullName("Updated Name")
-                .email("update@email.com")
-                .password("update123")
-                .build();
+        userUpdateRequest = new UserUpdateRequest(
+                "Updated Name",
+                "update@email.com",
+                "update123"
+        );
     }
 
     private void mockAuthenticatedUser(User user) {
@@ -134,20 +149,20 @@ public class UserServiceImplTest {
         when(reviewMapper.mapToReviewResponse(any(Review.class))).thenReturn(reviewResponse);
 
         // Act
-        UserDTOs.UserResponse actualResponse = userService.getUserById(1L);
+        UserResponse actualResponse = userService.getUserById(1L);
 
         // Assert
         assertNotNull(actualResponse);
-        assertEquals(user.getId(), actualResponse.getId());
-        assertEquals(user.getFullName(), actualResponse.getFullName());
-        assertEquals(user.getEmail(), actualResponse.getEmail());
-        assertEquals(user.getRole().name(), actualResponse.getRole());
-        assertFalse(actualResponse.getCollection().isEmpty());
-        assertEquals(gameResponse.getId(), actualResponse.getCollection().getFirst().getId());
-        assertEquals(gameResponse.getTitle(), actualResponse.getCollection().getFirst().getTitle());
-        assertFalse(actualResponse.getReviews().isEmpty());
-        assertEquals(reviewResponse.getId(), actualResponse.getReviews().getFirst().getId());
-        assertEquals(reviewResponse.getComment(), actualResponse.getReviews().getFirst().getComment());
+        assertEquals(user.getId(), actualResponse.id());
+        assertEquals(user.getFullName(), actualResponse.fullName());
+        assertEquals(user.getEmail(), actualResponse.email());
+        assertEquals(user.getRole().name(), actualResponse.role());
+        assertFalse(actualResponse.collection().isEmpty());
+        assertEquals(gameResponse.id(), actualResponse.collection().getFirst().id());
+        assertEquals(gameResponse.title(), actualResponse.collection().getFirst().title());
+        assertFalse(actualResponse.reviews().isEmpty());
+        assertEquals(reviewResponse.id(), actualResponse.reviews().getFirst().id());
+        assertEquals(reviewResponse.comment(), actualResponse.reviews().getFirst().comment());
 
         verify(userRepository).findById(1L);
         verify(gameMapper).mapToGameResponse(game);
@@ -162,13 +177,13 @@ public class UserServiceImplTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         // Act
-        UserDTOs.UserResponse actualResponse = userService.getUserById(1L);
+        UserResponse actualResponse = userService.getUserById(1L);
 
         // Assert
         assertNotNull(actualResponse);
-        assertEquals(user.getId(), actualResponse.getId());
-        assertTrue(actualResponse.getCollection().isEmpty());
-        assertTrue(actualResponse.getReviews().isEmpty());
+        assertEquals(user.getId(), actualResponse.id());
+        assertTrue(actualResponse.collection().isEmpty());
+        assertTrue(actualResponse.reviews().isEmpty());
 
         verify(userRepository).findById(1L);
     }
@@ -192,8 +207,8 @@ public class UserServiceImplTest {
         Long userIdToUpdate = user.getId();
         mockAuthenticatedUser(user);
         when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail(userUpdateRequest.getEmail())).thenReturn(false);
-        when(passwordEncoder.encode(userUpdateRequest.getPassword())).thenReturn("encodedNewPassword");
+        when(userRepository.existsByEmail(userUpdateRequest.email())).thenReturn(false);
+        when(passwordEncoder.encode(userUpdateRequest.password())).thenReturn("encodedNewPassword");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -201,12 +216,12 @@ public class UserServiceImplTest {
 
         // Assert
         assertNotNull(updatedUser);
-        assertEquals(userUpdateRequest.getFullName(), updatedUser.getFullName());
-        assertEquals(userUpdateRequest.getEmail(), updatedUser.getEmail());
+        assertEquals(userUpdateRequest.fullName(), updatedUser.getFullName());
+        assertEquals(userUpdateRequest.email(), updatedUser.getEmail());
         assertEquals("encodedNewPassword", updatedUser.getPassword());
         verify(userRepository).findById(userIdToUpdate);
-        verify(userRepository).existsByEmail(userUpdateRequest.getEmail());
-        verify(passwordEncoder).encode(userUpdateRequest.getPassword());
+        verify(userRepository).existsByEmail(userUpdateRequest.email());
+        verify(passwordEncoder).encode(userUpdateRequest.password());
         verify(userRepository).save(user);
     }
 
@@ -214,10 +229,14 @@ public class UserServiceImplTest {
     void updateUserTest_whenUserUpdatesOwnProfile_withoutPasswordChange_shouldUpdateAndReturnUser() {
         // Arrange
         Long userIdToUpdate = user.getId();
-        userUpdateRequest.setPassword(null);
+        userUpdateRequest = new UserUpdateRequest(
+                userUpdateRequest.fullName(),
+                userUpdateRequest.email(),
+                null
+        );
         mockAuthenticatedUser(user);
         when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail(userUpdateRequest.getEmail())).thenReturn(false);
+        when(userRepository.existsByEmail(userUpdateRequest.email())).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -225,8 +244,8 @@ public class UserServiceImplTest {
 
         // Assert
         assertNotNull(updatedUser);
-        assertEquals(userUpdateRequest.getFullName(), updatedUser.getFullName());
-        assertEquals(userUpdateRequest.getEmail(), updatedUser.getEmail());
+        assertEquals(userUpdateRequest.fullName(), updatedUser.getFullName());
+        assertEquals(userUpdateRequest.email(), updatedUser.getEmail());
         assertEquals("password", updatedUser.getPassword());
         verify(passwordEncoder, never()).encode(anyString());
         verify(userRepository).save(user);
@@ -269,7 +288,7 @@ public class UserServiceImplTest {
         Long userIdToUpdate = user.getId();
         mockAuthenticatedUser(user);
         when(userRepository.findById(userIdToUpdate)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail(userUpdateRequest.getEmail())).thenReturn(true);
+        when(userRepository.existsByEmail(userUpdateRequest.email())).thenReturn(true);
 
         // Act & Assert
         ResponseStatusException exception = assertThrows(ResponseStatusException.class, () ->
@@ -277,7 +296,7 @@ public class UserServiceImplTest {
         assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
         assertEquals("Email already taken", exception.getReason());
         verify(userRepository).findById(userIdToUpdate);
-        verify(userRepository).existsByEmail(userUpdateRequest.getEmail());
+        verify(userRepository).existsByEmail(userUpdateRequest.email());
         verify(userRepository, never()).save(any());
     }
 

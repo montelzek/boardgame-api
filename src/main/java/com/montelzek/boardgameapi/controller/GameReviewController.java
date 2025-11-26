@@ -1,6 +1,7 @@
 package com.montelzek.boardgameapi.controller;
 
-import com.montelzek.boardgameapi.dto.ReviewDTOs;
+import com.montelzek.boardgameapi.dto.ReviewRequest;
+import com.montelzek.boardgameapi.dto.ReviewResponse;
 import com.montelzek.boardgameapi.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,22 +20,22 @@ public class GameReviewController {
     private final ReviewService reviewService;
 
     @GetMapping
-    public ResponseEntity<List<ReviewDTOs.ReviewResponse>> getReviewsByGameId(@PathVariable Long gameId) {
+    public ResponseEntity<List<ReviewResponse>> getReviewsByGameId(@PathVariable Long gameId) {
 
-        List<ReviewDTOs.ReviewResponse> reviews = reviewService.getReviewsByGameId(gameId);
+        List<ReviewResponse> reviews = reviewService.getReviewsByGameId(gameId);
         return ResponseEntity.ok(reviews);
     }
 
     @PostMapping
-    public ResponseEntity<ReviewDTOs.ReviewResponse> createReview(@PathVariable Long gameId,
-                                                                  @Valid @RequestBody ReviewDTOs.ReviewRequest reviewRequest) {
+    public ResponseEntity<ReviewResponse> createReview(@PathVariable Long gameId,
+                                                                  @Valid @RequestBody ReviewRequest reviewRequest) {
 
-        ReviewDTOs.ReviewResponse reviewResponse = reviewService.createReview(gameId, reviewRequest);
+        ReviewResponse reviewResponse = reviewService.createReview(gameId, reviewRequest);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentContextPath()
                 .path("/reviews/{id}")
-                .buildAndExpand(reviewResponse.getId())
+                .buildAndExpand(reviewResponse.id())
                 .toUri();
         return ResponseEntity.created(location).body(reviewResponse);
     }

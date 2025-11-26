@@ -1,6 +1,7 @@
 package com.montelzek.boardgameapi.controller;
 
-import com.montelzek.boardgameapi.dto.ReviewDTOs;
+import com.montelzek.boardgameapi.dto.ReviewRequest;
+import com.montelzek.boardgameapi.dto.ReviewResponse;
 import com.montelzek.boardgameapi.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,10 +16,10 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @PutMapping("/{reviewId}")
-    public ResponseEntity<ReviewDTOs.ReviewResponse> updateReview(@PathVariable Long reviewId,
-                                                                  @Valid @RequestBody ReviewDTOs.ReviewRequest reviewRequest) {
+    public ResponseEntity<ReviewResponse> updateReview(@PathVariable Long reviewId,
+                                                                  @Valid @RequestBody ReviewRequest reviewRequest) {
 
-        ReviewDTOs.ReviewResponse reviewResponse = reviewService.updateReview(reviewId, reviewRequest);
+        ReviewResponse reviewResponse = reviewService.updateReview(reviewId, reviewRequest);
 
         return ResponseEntity.ok(reviewResponse);
     }

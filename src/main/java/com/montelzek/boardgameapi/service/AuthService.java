@@ -27,14 +27,14 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterDTO registerDTO) {
-        if (userRepository.existsByEmail(registerDTO.getEmail())) {
+        if (userRepository.existsByEmail(registerDTO.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already taken");
         }
 
         User user = new User();
-        user.setFullName(registerDTO.getFullName());
-        user.setEmail(registerDTO.getEmail());
-        user.setPassword(passwordEncoder.encode(registerDTO.getPassword()));
+        user.setFullName(registerDTO.fullName());
+        user.setEmail(registerDTO.email());
+        user.setPassword(passwordEncoder.encode(registerDTO.password()));
         user.setRole(Role.USER);
 
         User savedUser = userRepository.save(user);
@@ -46,18 +46,18 @@ public class AuthService {
                 .build();
 
         String jwtToken = jwtService.generateToken(userDetails);
-        return AuthResponse.builder().token(jwtToken).build();
+        return new AuthResponse(jwtToken);
     }
 
     public AuthResponse login(LoginDTO loginDTO) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginDTO.getEmail(),
-                        loginDTO.getPassword()
+                        loginDTO.email(),
+                        loginDTO.password()
                 )
         );
 
-        User user = userRepository.findByEmail(loginDTO.getEmail())
+        User user = userRepository.findByEmail(loginDTO.email())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found after auth"));
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
@@ -67,6 +67,6 @@ public class AuthService {
                 .build();
 
         String jwtToken = jwtService.generateToken(userDetails);
-        return AuthResponse.builder().token(jwtToken).build();
+        return new AuthResponse(jwtToken);
     }
 }

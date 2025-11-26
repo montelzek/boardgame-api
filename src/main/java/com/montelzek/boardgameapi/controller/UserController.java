@@ -1,6 +1,7 @@
 package com.montelzek.boardgameapi.controller;
 
-import com.montelzek.boardgameapi.dto.UserDTOs;
+import com.montelzek.boardgameapi.dto.UserResponse;
+import com.montelzek.boardgameapi.dto.UserUpdateRequest;
 import com.montelzek.boardgameapi.model.User;
 import com.montelzek.boardgameapi.service.UserService;
 import jakarta.validation.Valid;
@@ -17,14 +18,14 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserDTOs.UserResponse> getUserById(@PathVariable Long id) {
-        UserDTOs.UserResponse userResponse = userService.getUserById(id);
+    public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
+        UserResponse userResponse = userService.getUserById(id);
         return ResponseEntity.ok(userResponse);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserDTOs.UserResponse> updateUser(@PathVariable Long id,
-            @Valid @RequestBody UserDTOs.UserUpdateRequest userUpdateRequest) {
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id,
+            @Valid @RequestBody UserUpdateRequest userUpdateRequest) {
 
         User user = userService.updateUser(userUpdateRequest, id);
         return ResponseEntity.ok(userService.getUserById(user.getId()));

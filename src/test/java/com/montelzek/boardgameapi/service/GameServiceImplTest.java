@@ -1,7 +1,8 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.GameDTOs;
-import com.montelzek.boardgameapi.dto.ReviewDTOs;
+import com.montelzek.boardgameapi.dto.GameRequest;
+import com.montelzek.boardgameapi.dto.GameResponse;
+import com.montelzek.boardgameapi.dto.ReviewResponse;
 import com.montelzek.boardgameapi.exception.ResourceNotFoundException;
 import com.montelzek.boardgameapi.mapper.GameMapper;
 import com.montelzek.boardgameapi.mapper.ReviewMapper;
@@ -41,25 +42,25 @@ public class GameServiceImplTest {
     private GameServiceImpl gameService;
 
     private Game game1;
-    private GameDTOs.GameRequest gameRequest;
-    private GameDTOs.GameResponse gameResponse;
+    private GameRequest gameRequest;
+    private GameResponse gameResponse;
     private Review review1;
-    private ReviewDTOs.ReviewResponse reviewResponse;
+    private ReviewResponse reviewResponse;
 
     @Captor
     private ArgumentCaptor<Game> gameArgumentCaptor;
 
     @BeforeEach
     void setUp() {
-        gameRequest = GameDTOs.GameRequest.builder()
-                .title("Catan")
-                .description("A game of trade and settlement.")
-                .minPlayers(3)
-                .maxPlayers(4)
-                .playTime(90)
-                .publisher("KOSMOS")
-                .releaseYear(1995)
-                .build();
+        gameRequest = new GameRequest(
+                "Catan",
+                "A game of trade and settlement.",
+                3,
+                4,
+                90,
+                "KOSMOS",
+                1995
+        );
 
         User user = User.builder().id(1L).email("user@test.com").build();
 
@@ -79,24 +80,29 @@ public class GameServiceImplTest {
 
         review1.setGame(game1);
 
-        reviewResponse = ReviewDTOs.ReviewResponse.builder()
-                .id(review1.getId())
-                .rating(review1.getRating())
-                .comment(review1.getComment())
-                .userId(user.getId())
-                .email(user.getEmail())
-                .build();
+        reviewResponse = new ReviewResponse(
+                review1.getId(),
+                game1.getId(),
+                game1.getTitle(),
+                user.getId(),
+                user.getEmail(),
+                review1.getRating(),
+                review1.getComment(),
+                review1.getCreatedAt()
+        );
 
-        gameResponse = GameDTOs.GameResponse.builder()
-                .id(game1.getId())
-                .title(game1.getTitle())
-                .description(game1.getDescription())
-                .minPlayers(game1.getMinPlayers())
-                .maxPlayers(game1.getMaxPlayers())
-                .playTime(game1.getPlayTime())
-                .publisher(game1.getPublisher())
-                .releaseYear(game1.getReleaseYear())
-                .build();
+        gameResponse = new GameResponse(
+                game1.getId(),
+                game1.getTitle(),
+                game1.getDescription(),
+                game1.getMinPlayers(),
+                game1.getMaxPlayers(),
+                game1.getPlayTime(),
+                game1.getPublisher(),
+                game1.getReleaseYear(),
+                Collections.emptySet(),
+                List.of(reviewResponse)
+        );
     }
 
     @Test
@@ -118,23 +124,23 @@ public class GameServiceImplTest {
     @Test
     void getGameByIdTest_whenGameFound_shouldReturnGameResponseWithReviews() {
         // Arrange
-        when(gameRepository.findById(1L)).thenReturn(Optional.of(game1));
+        when(gameRepository.findGameByIdWithCategories(1L)).thenReturn(Optional.of(game1));
         when(gameMapper.mapToGameResponse(game1)).thenReturn(gameResponse);
         when(reviewMapper.mapToReviewResponse(review1)).thenReturn(reviewResponse);
 
         // Act
-        GameDTOs.GameResponse actualResponse = gameService.getGameById(1L);
+        GameResponse actualResponse = gameService.getGameById(1L);
 
         // Assert
         assertNotNull(actualResponse);
-        assertEquals(game1.getId(), actualResponse.getId());
-        assertEquals(game1.getTitle(), actualResponse.getTitle());
-        assertFalse(actualResponse.getReviews().isEmpty());
-        assertEquals(1, actualResponse.getReviews().size());
-        assertEquals(reviewResponse.getId(), actualResponse.getReviews().getFirst().getId());
-        assertEquals(reviewResponse.getComment(), actualResponse.getReviews().getFirst().getComment());
+        assertEquals(game1.getId(), actualResponse.id());
+        assertEquals(game1.getTitle(), actualResponse.title());
+        assertFalse(actualResponse.reviews().isEmpty());
+        assertEquals(1, actualResponse.reviews().size());
+        assertEquals(reviewResponse.id(), actualResponse.reviews().getFirst().id());
+        assertEquals(reviewResponse.comment(), actualResponse.reviews().getFirst().comment());
 
-        verify(gameRepository).findById(1L);
+        verify(gameRepository).findGameByIdWithCategories(1L);
         verify(gameMapper).mapToGameResponse(game1);
         verify(reviewMapper).mapToReviewResponse(review1);
     }
@@ -143,14 +149,14 @@ public class GameServiceImplTest {
     void getGameByIdTest_whenGameNotFound_shouldThrowResourceNotFoundException() {
         // Arrange
         Long nonExistentId = 99L;
-        when(gameRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+        when(gameRepository.findGameByIdWithCategories(nonExistentId)).thenReturn(Optional.empty());
 
         // Act & Assert
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
                 gameService.getGameById(nonExistentId));
 
         assertEquals("Game not found with id: " + nonExistentId, exception.getMessage());
-        verify(gameRepository).findById(nonExistentId);
+        verify(gameRepository).findGameByIdWithCategories(nonExistentId);
     }
 
     @Test
@@ -160,13 +166,13 @@ public class GameServiceImplTest {
         when(gameMapper.mapToGameResponse(game1)).thenReturn(gameResponse);
 
         // Act
-        List<GameDTOs.GameResponse> result = gameService.listAllGames();
+        List<GameResponse> result = gameService.listAllGames();
 
         // Assert
         assertNotNull(result);
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
-        assertEquals(gameResponse.getTitle(), result.getFirst().getTitle());
+        assertEquals(gameResponse.title(), result.getFirst().title());
 
         verify(gameRepository).findAll();
         verify(gameMapper, times(1)).mapToGameResponse(game1);
@@ -178,7 +184,7 @@ public class GameServiceImplTest {
         when(gameRepository.findAll()).thenReturn(Collections.emptyList());
 
         // Act
-        List<GameDTOs.GameResponse> result = gameService.listAllGames();
+        List<GameResponse> result = gameService.listAllGames();
 
         // Assert
         assertNotNull(result);

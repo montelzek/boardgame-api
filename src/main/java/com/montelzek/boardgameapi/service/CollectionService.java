@@ -1,12 +1,12 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.GameDTOs;
+import com.montelzek.boardgameapi.dto.GameResponse;
 
 import java.util.List;
 
 public interface CollectionService {
 
-    List<GameDTOs.GameResponse> getUserCollection(Long userId);
+    List<GameResponse> getUserCollection(Long userId);
 
     void addGameToCollection(Long userId, Long gameId);
 

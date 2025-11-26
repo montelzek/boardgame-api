@@ -1,17 +1,18 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.ReviewDTOs;
+import com.montelzek.boardgameapi.dto.ReviewRequest;
+import com.montelzek.boardgameapi.dto.ReviewResponse;
 import com.montelzek.boardgameapi.model.Review;
 
 import java.util.List;
 
 public interface ReviewService {
 
-    List<ReviewDTOs.ReviewResponse> getReviewsByGameId(Long gameId);
+    List<ReviewResponse> getReviewsByGameId(Long gameId);
 
-    ReviewDTOs.ReviewResponse createReview(Long gameId, ReviewDTOs.ReviewRequest reviewRequest);
+    ReviewResponse createReview(Long gameId, ReviewRequest reviewRequest);
 
-    ReviewDTOs.ReviewResponse updateReview(Long reviewId, ReviewDTOs.ReviewRequest reviewRequest);
+    ReviewResponse updateReview(Long reviewId, ReviewRequest reviewRequest);
 
     void deleteReview(Long reviewId);
 }

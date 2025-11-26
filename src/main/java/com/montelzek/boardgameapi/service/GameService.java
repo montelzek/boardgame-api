@@ -1,19 +1,20 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.GameDTOs;
+import com.montelzek.boardgameapi.dto.GameRequest;
+import com.montelzek.boardgameapi.dto.GameResponse;
 import com.montelzek.boardgameapi.model.Game;
 
 import java.util.List;
 
 public interface GameService {
 
-    Game createGame(GameDTOs.GameRequest gameRequest);
+    Game createGame(GameRequest gameRequest);
 
-    GameDTOs.GameResponse getGameById(Long gameId);
+    GameResponse getGameById(Long gameId);
 
-    List<GameDTOs.GameResponse> listAllGames();
+    List<GameResponse> listAllGames();
 
-    Game updateGame(GameDTOs.GameRequest gameRequest, Long gameId);
+    Game updateGame(GameRequest gameRequest, Long gameId);
 
     void deleteGame(Long id);
 

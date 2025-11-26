@@ -1,8 +1,9 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.GameDTOs;
-import com.montelzek.boardgameapi.dto.ReviewDTOs;
-import com.montelzek.boardgameapi.dto.UserDTOs;
+import com.montelzek.boardgameapi.dto.GameResponse;
+import com.montelzek.boardgameapi.dto.ReviewResponse;
+import com.montelzek.boardgameapi.dto.UserResponse;
+import com.montelzek.boardgameapi.dto.UserUpdateRequest;
 import com.montelzek.boardgameapi.exception.ResourceNotFoundException;
 import com.montelzek.boardgameapi.mapper.GameMapper;
 import com.montelzek.boardgameapi.mapper.ReviewMapper;
@@ -33,30 +34,30 @@ public class UserServiceImpl implements UserService{
     private final ReviewMapper reviewMapper;
 
     @Override
-    public UserDTOs.UserResponse getUserById(Long userId) {
+    public UserResponse getUserById(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        List<GameDTOs.GameResponse> collection = user.getGames().stream()
+        List<GameResponse> collection = user.getGames().stream()
                 .map(gameMapper::mapToGameResponse)
                 .collect(Collectors.toList());
 
-        List<ReviewDTOs.ReviewResponse> reviews = user.getReviews().stream()
+        List<ReviewResponse> reviews = user.getReviews().stream()
                 .map(reviewMapper::mapToReviewResponse)
                 .collect(Collectors.toList());
 
-        return UserDTOs.UserResponse.builder()
-                .id(user.getId())
-                .fullName(user.getFullName())
-                .email(user.getEmail())
-                .role(user.getRole().name())
-                .collection(collection)
-                .reviews(reviews)
-                .build();
+        return new UserResponse(
+                user.getId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getRole().name(),
+                collection,
+                reviews
+        );
     }
 
     @Override
-    public User updateUser(UserDTOs.UserUpdateRequest userUpdateRequest, Long userId) {
+    public User updateUser(UserUpdateRequest userUpdateRequest, Long userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -65,15 +66,15 @@ public class UserServiceImpl implements UserService{
             throw new AccessDeniedException("You are not authorized to update this user");
         }
 
-        if (userRepository.existsByEmail(userUpdateRequest.getEmail()) &&
-                !userUpdateRequest.getEmail().equals(user.getEmail())) {
+        if (userRepository.existsByEmail(userUpdateRequest.email()) &&
+                !userUpdateRequest.email().equals(user.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already taken");
         }
 
-        user.setFullName(userUpdateRequest.getFullName());
-        user.setEmail(userUpdateRequest.getEmail());
+        user.setFullName(userUpdateRequest.fullName());
+        user.setEmail(userUpdateRequest.email());
         
-        String newPassword = userUpdateRequest.getPassword();
+        String newPassword = userUpdateRequest.password();
         if (StringUtils.hasText(newPassword)) {
             user.setPassword(passwordEncoder.encode(newPassword));
         }

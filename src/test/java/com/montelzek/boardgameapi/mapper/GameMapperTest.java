@@ -1,6 +1,7 @@
 package com.montelzek.boardgameapi.mapper;
 
-import com.montelzek.boardgameapi.dto.GameDTOs;
+import com.montelzek.boardgameapi.dto.GameRequest;
+import com.montelzek.boardgameapi.dto.GameResponse;
 import com.montelzek.boardgameapi.model.Game;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,39 +32,39 @@ class GameMapperTest {
     @Test
     void shouldMapGameToGameResponse() {
         // Act
-        GameDTOs.GameResponse gameResponse = mapper.mapToGameResponse(game);
+        GameResponse gameResponse = mapper.mapToGameResponse(game);
         //Assert
-        assertEquals(gameResponse.getId(), game.getId());
-        assertEquals(gameResponse.getTitle(), game.getTitle());
-        assertEquals(gameResponse.getDescription(), game.getDescription());
-        assertEquals(gameResponse.getMinPlayers(), game.getMinPlayers());
-        assertEquals(gameResponse.getMaxPlayers(), game.getMaxPlayers());
-        assertEquals(gameResponse.getPlayTime(), game.getPlayTime());
-        assertEquals(gameResponse.getPublisher(), game.getPublisher());
-        assertEquals(gameResponse.getReleaseYear(), game.getReleaseYear());
+        assertEquals(gameResponse.id(), game.getId());
+        assertEquals(gameResponse.title(), game.getTitle());
+        assertEquals(gameResponse.description(), game.getDescription());
+        assertEquals(gameResponse.minPlayers(), game.getMinPlayers());
+        assertEquals(gameResponse.maxPlayers(), game.getMaxPlayers());
+        assertEquals(gameResponse.playTime(), game.getPlayTime());
+        assertEquals(gameResponse.publisher(), game.getPublisher());
+        assertEquals(gameResponse.releaseYear(), game.getReleaseYear());
     }
 
     @Test
     void shouldMapGameRequestToGame() {
-        GameDTOs.GameRequest gameRequest = GameDTOs.GameRequest.builder()
-                .title("Test")
-                .description("Fun game")
-                .minPlayers(1)
-                .maxPlayers(6)
-                .playTime(120)
-                .publisher("")
-                .releaseYear(2015)
-                .build();
+        GameRequest gameRequest = new GameRequest(
+                "Test",
+                "Fun game",
+                1,
+                6,
+                120,
+                "",
+                2015
+        );
         // Act
         mapper.mapGameRequestToGame(gameRequest, game);
         // Assert
         assertEquals(1L, game.getId());
-        assertEquals(gameRequest.getTitle(), game.getTitle());
-        assertEquals(gameRequest.getDescription(), game.getDescription());
-        assertEquals(gameRequest.getMinPlayers(), game.getMinPlayers());
-        assertEquals(gameRequest.getMaxPlayers(), game.getMaxPlayers());
-        assertEquals(gameRequest.getPlayTime(), game.getPlayTime());
-        assertEquals(gameRequest.getPublisher(), game.getPublisher());
-        assertEquals(gameRequest.getReleaseYear(), game.getReleaseYear());
+        assertEquals(gameRequest.title(), game.getTitle());
+        assertEquals(gameRequest.description(), game.getDescription());
+        assertEquals(gameRequest.minPlayers(), game.getMinPlayers());
+        assertEquals(gameRequest.maxPlayers(), game.getMaxPlayers());
+        assertEquals(gameRequest.playTime(), game.getPlayTime());
+        assertEquals(gameRequest.publisher(), game.getPublisher());
+        assertEquals(gameRequest.releaseYear(), game.getReleaseYear());
     }
 }
