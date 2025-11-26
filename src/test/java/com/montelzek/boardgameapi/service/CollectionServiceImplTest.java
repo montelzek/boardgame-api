@@ -17,6 +17,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.*;
 
@@ -211,4 +212,103 @@ public class CollectionServiceImplTest {
             verify(gameMapper, times(2)).mapToGameResponse(any(Game.class));
         }
     }
+
+    @Nested
+    @DisplayName("addGameCollection() tests")
+    class AddGameToCollectionTests {
+
+        @Test
+        @DisplayName("Should add game to user's collection when authorized")
+        void addGameToCollection_whenAuthorized_shouldAddGame() {
+            // arrange
+            when(userService.getCurrentUserId()).thenReturn(USER_ID);
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+            when(gameRepository.findById(GAME_ID_2)).thenReturn(Optional.of(game2));
+            when(userRepository.save(any(User.class))).thenReturn(user);
+            int gamesBefore = user.getGames().size();
+
+            // act
+            collectionService.addGameToCollection(USER_ID, GAME_ID_2);
+
+            // assert
+            verify(userRepository).save(userCaptor.capture());
+
+            User savedUser = userCaptor.getValue();
+
+            assertEquals(gamesBefore + 1, savedUser.getGames().size(),
+                    "User should have one more game");
+            assertTrue(savedUser.getGames().contains(game2),
+                    "Collection should contain the added game");
+
+            verify(userService).getCurrentUserId();
+            verify(userRepository).findById(USER_ID);
+            verify(gameRepository).findById(GAME_ID_2);
+        }
+
+        @Test
+        @DisplayName("Should throw AccessDeniedException when not authorized")
+        void addGameToCollection_whenNotAuthorized_shouldThrowAccessDeniedException() {
+            // arrange
+            Long anotherUserId = 999L;
+            when(userService.getCurrentUserId()).thenReturn(anotherUserId);
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+
+            // act & assert
+            AccessDeniedException exception = assertThrows(
+                    AccessDeniedException.class,
+                    () -> collectionService.addGameToCollection(USER_ID, GAME_ID_2)
+            );
+
+            assertEquals(
+                    "You are not authorized to modify this collection",
+                    exception.getMessage()
+            );
+
+            verify(userRepository, never()).save(any());
+            verify(gameRepository, never()).findById(any());
+        }
+
+        @Test
+        @DisplayName("Should throw ResourceNotFoundException when user does not exist")
+        void addGameToCollection_whenUserNotFound_shouldThrowResourceNotFoundException() {
+            // arrange
+            when(userRepository.findById(NON_EXISTENT_ID)).thenReturn(Optional.empty());
+
+            // act & assert
+            ResourceNotFoundException exception = assertThrows(
+                    ResourceNotFoundException.class,
+                    () -> collectionService.addGameToCollection(NON_EXISTENT_ID, GAME_ID_1)
+            );
+
+            assertEquals("User not found with id: " + NON_EXISTENT_ID, exception.getMessage());
+
+            verify(userRepository).findById(NON_EXISTENT_ID);
+            verify(gameRepository, never()).findById(any());
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should throw ResourceNotFoundException when game does not exist")
+        void addGameToCollection_whenGameNotFound_shouldThrowResourceNotFoundException() {
+            // arrange
+            when(userService.getCurrentUserId()).thenReturn(USER_ID);
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+            when(gameRepository.findById(NON_EXISTENT_ID)).thenReturn(Optional.empty());
+
+            // act & assert
+            ResourceNotFoundException exception = assertThrows(
+                    ResourceNotFoundException.class,
+                    () -> collectionService.addGameToCollection(USER_ID, NON_EXISTENT_ID)
+            );
+
+            assertEquals("Game not found with id: " + NON_EXISTENT_ID, exception.getMessage());
+
+            verify(userRepository).findById(USER_ID);
+            verify(userService).getCurrentUserId();
+            verify(gameRepository).findById(NON_EXISTENT_ID);
+            verify(userRepository, never()).save(any());
+        }
+    }
+
+
 }
