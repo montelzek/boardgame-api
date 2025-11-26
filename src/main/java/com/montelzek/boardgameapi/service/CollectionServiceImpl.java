@@ -6,7 +6,6 @@ import com.montelzek.boardgameapi.mapper.GameMapper;
 import com.montelzek.boardgameapi.model.Game;
 import com.montelzek.boardgameapi.model.User;
 import com.montelzek.boardgameapi.repository.GameRepository;
-import com.montelzek.boardgameapi.repository.ReviewRepository;
 import com.montelzek.boardgameapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,7 +22,6 @@ public class CollectionServiceImpl implements CollectionService{
     private final UserRepository userRepository;
     private final UserServiceImpl userService;
     private final GameRepository gameRepository;
-    private final ReviewRepository reviewRepository;
     private final GameMapper gameMapper;
 
     @Override
