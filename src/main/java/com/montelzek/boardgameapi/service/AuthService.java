@@ -1,8 +1,8 @@
 package com.montelzek.boardgameapi.service;
 
 import com.montelzek.boardgameapi.dto.AuthResponse;
-import com.montelzek.boardgameapi.dto.LoginDTO;
-import com.montelzek.boardgameapi.dto.RegisterDTO;
+import com.montelzek.boardgameapi.dto.LoginRequest;
+import com.montelzek.boardgameapi.dto.RegisterRequest;
 import com.montelzek.boardgameapi.jwtConfig.JwtService;
 import com.montelzek.boardgameapi.model.Role;
 import com.montelzek.boardgameapi.model.User;
@@ -26,7 +26,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    public AuthResponse register(RegisterDTO registerDTO) {
+    public AuthResponse register(RegisterRequest registerDTO) {
         if (userRepository.existsByEmail(registerDTO.email())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already taken");
         }
@@ -49,7 +49,7 @@ public class AuthService {
         return new AuthResponse(jwtToken);
     }
 
-    public AuthResponse login(LoginDTO loginDTO) {
+    public AuthResponse login(LoginRequest loginDTO) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginDTO.email(),

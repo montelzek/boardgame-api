@@ -1,6 +1,6 @@
 package com.montelzek.boardgameapi.service;
 
-import com.montelzek.boardgameapi.dto.CategoryDto;
+import com.montelzek.boardgameapi.dto.CategoryResponse;
 import com.montelzek.boardgameapi.dto.GameRequest;
 import com.montelzek.boardgameapi.dto.GameResponse;
 import com.montelzek.boardgameapi.dto.ReviewResponse;
@@ -39,7 +39,7 @@ public class GameServiceImpl implements GameService{
         Game game = gameRepository.findGameByIdWithCategories(gameId)
                 .orElseThrow(() -> new ResourceNotFoundException("Game not found with id: " + gameId));
 
-        Set<CategoryDto> categories = game.getCategories().stream()
+        Set<CategoryResponse> categories = game.getCategories().stream()
                 .map(this::mapToCategoryDto)
                 .collect(Collectors.toSet());
 
@@ -88,7 +88,7 @@ public class GameServiceImpl implements GameService{
         gameRepository.delete(game);
     }
 
-    private CategoryDto mapToCategoryDto(Category category) {
-        return new CategoryDto(category.getId(), category.getName());
+    private CategoryResponse mapToCategoryDto(Category category) {
+        return new CategoryResponse(category.getId(), category.getName());
     }
 }

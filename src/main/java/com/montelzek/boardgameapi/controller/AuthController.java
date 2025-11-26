@@ -1,8 +1,8 @@
 package com.montelzek.boardgameapi.controller;
 
 import com.montelzek.boardgameapi.dto.AuthResponse;
-import com.montelzek.boardgameapi.dto.LoginDTO;
-import com.montelzek.boardgameapi.dto.RegisterDTO;
+import com.montelzek.boardgameapi.dto.LoginRequest;
+import com.montelzek.boardgameapi.dto.RegisterRequest;
 import com.montelzek.boardgameapi.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +20,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterDTO request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.ok(authService.register(request));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginDTO request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 }
