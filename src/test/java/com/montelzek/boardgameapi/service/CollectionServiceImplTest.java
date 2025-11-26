@@ -310,5 +310,86 @@ public class CollectionServiceImplTest {
         }
     }
 
+    @Nested
+    @DisplayName("removeGameFromCollection() tests")
+    class RemoveGameFromCollectionTests {
 
+        @Test
+        @DisplayName("Should remove game from user's collection when authorized")
+        void removeGameFromCollection_whenAuthorized_shouldRemoveGame() {
+            // arrange
+            when(userService.getCurrentUserId()).thenReturn(USER_ID);
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+            when(gameRepository.findById(GAME_ID_1)).thenReturn(Optional.of(game1));
+            when(userRepository.save(any(User.class))).thenReturn(user);
+
+            assertTrue(user.getGames().contains(game1), "Game should be in collection before removal");
+            int gamesBefore = user.getGames().size();
+
+            // act
+            collectionService.removeGameFromCollection(USER_ID, GAME_ID_1);
+
+            // assert
+            verify(userRepository).save(userCaptor.capture());
+
+            User savedUser = userCaptor.getValue();
+
+            assertEquals(gamesBefore - 1, savedUser.getGames().size(),
+                    "User should have one less game");
+            assertFalse(savedUser.getGames().contains(game1),
+                    "Collection should not contain the removed game");
+        }
+
+        @Test
+        @DisplayName("Should throw AccessDeniedException when not authorized")
+        void removeGameFromCollection_whenNotAuthorized_shouldThrowAccessDeniedException() {
+            // arrange
+            Long anotherUserId = 888L;
+            when(userService.getCurrentUserId()).thenReturn(anotherUserId);
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+
+            // act & assert
+            AccessDeniedException exception = assertThrows(
+                    AccessDeniedException.class,
+                    () -> collectionService.removeGameFromCollection(USER_ID, GAME_ID_1)
+            );
+
+            assertEquals("You are not authorized to modify this collection", exception.getMessage());
+
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should throw ResourceNotFoundException when user does not exist")
+        void removeGameFromCollection_whenUserNotFound_shouldThrowResourceNotFoundException() {
+            // arrange
+            when(userRepository.findById(NON_EXISTENT_ID)).thenReturn(Optional.empty());
+
+            // act & assert
+            ResourceNotFoundException exception = assertThrows(
+                    ResourceNotFoundException.class,
+                    () -> collectionService.removeGameFromCollection(NON_EXISTENT_ID, GAME_ID_1)
+            );
+
+            assertEquals("User not found with id: " + NON_EXISTENT_ID, exception.getMessage());
+        }
+
+        @Test
+        @DisplayName("Should throw ResourceNotFoundException when game does not exist")
+        void removeGameFromCollection_whenGameNotFound_shouldThrowResourceNotFoundException() {
+            // arrange
+            when(userService.getCurrentUserId()).thenReturn(USER_ID);
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+            when(gameRepository.findById(NON_EXISTENT_ID)).thenReturn(Optional.empty());
+
+            // act & assert
+            ResourceNotFoundException exception = assertThrows(
+                    ResourceNotFoundException.class,
+                    () -> collectionService.removeGameFromCollection(USER_ID, NON_EXISTENT_ID)
+            );
+
+            assertEquals("Game not found with id: " + NON_EXISTENT_ID, exception.getMessage());
+            verify(userRepository, never()).save(any());
+        }
+    }
 }
